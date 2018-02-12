@@ -15,7 +15,7 @@ public class WifiNetwork {
 
     private String macAdress;
 
-    private String signalStregth;
+    private int signalStrength;
 
     private LatLng position;
 
@@ -55,12 +55,12 @@ public class WifiNetwork {
         this.macAdress = macAdress;
     }
 
-    public String getSignalStregth() {
-        return signalStregth;
+    public int getSignalStrength() {
+        return signalStrength;
     }
 
-    public void setSignalStregth(String signalStregth) {
-        this.signalStregth = signalStregth;
+    public void setSignalStrength(int signalStrength) {
+        this.signalStrength = signalStrength;
     }
 
     public LatLng getPosition() {
