@@ -10,13 +10,12 @@ import android.net.wifi.WifiManager;
 
 import java.util.List;
 
-public class WifiScanner extends LiveData<List<ScanResult>> {
+public class WifiLiveData extends LiveData<List<ScanResult>> {
     private WifiManager wifiManager;
     private Context context;
     private BroadcastReceiver broadcastReceiver;
-    private List<ScanResult> discoveredNetworks;
 
-    public WifiScanner(Context context) {
+    public WifiLiveData(Context context) {
         this.context = context;
         this.wifiManager = (WifiManager) this.context.getSystemService(Context.WIFI_SERVICE);
         this.wifiManager.setWifiEnabled(true);
@@ -29,7 +28,7 @@ public class WifiScanner extends LiveData<List<ScanResult>> {
     }
 
     private void onScanResults(Context context, Intent intent) {
-        discoveredNetworks = wifiManager.getScanResults();
+        List<ScanResult> discoveredNetworks = wifiManager.getScanResults();
         if (discoveredNetworks.isEmpty()) {
             setValue(null);
         } else {
