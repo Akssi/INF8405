@@ -1,18 +1,17 @@
 package us.wifisearcher.persistence;
 
-import us.wifisearcher.persistence.database.WifiNetwork;
-import us.wifisearcher.persistence.database.WifiNetworkDao;
-
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.concurrent.Executor;
+
+import us.wifisearcher.persistence.database.WifiNetwork;
+import us.wifisearcher.persistence.database.WifiNetworkDao;
 
 @Singleton
 public class WifiNetworkRepository {
     private final WifiNetworkDao wifiNetworkDao;
 
     @Inject
-    public WifiNetworkRepository(WifiNetworkDao wifiNetworkDao, Executor executor) {
+    public WifiNetworkRepository(WifiNetworkDao wifiNetworkDao) {
         this.wifiNetworkDao = wifiNetworkDao;
     }
 

@@ -2,7 +2,6 @@ package us.wifisearcher.persistence.database;
 
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
-import com.google.android.gms.maps.model.LatLng;
 
 @Entity
 public class WifiNetwork {
@@ -13,11 +12,11 @@ public class WifiNetwork {
 
     private String passwordLockState;
 
-    private String macAdress;
+    private String macAddress;
 
     private int signalStrength;
 
-    private LatLng position;
+//    private LatLng position;
 
     private String keyType;
 
@@ -47,12 +46,12 @@ public class WifiNetwork {
         this.passwordLockState = passwordLockState;
     }
 
-    public String getMacAdress() {
-        return macAdress;
+    public String getMacAddress() {
+        return macAddress;
     }
 
-    public void setMacAdress(String macAdress) {
-        this.macAdress = macAdress;
+    public void setMacAddress(String macAddress) {
+        this.macAddress = macAddress;
     }
 
     public int getSignalStrength() {
@@ -63,13 +62,13 @@ public class WifiNetwork {
         this.signalStrength = signalStrength;
     }
 
-    public LatLng getPosition() {
-        return position;
-    }
+//    public LatLng getPosition() {
+//        return position;
+//    }
 
-    public void setPosition(LatLng position) {
-        this.position = position;
-    }
+//    public void setPosition(LatLng position) {
+//        this.position = position;
+//    }
 
     public String getKeyType() {
         return keyType;
