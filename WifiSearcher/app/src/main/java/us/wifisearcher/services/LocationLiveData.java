@@ -8,12 +8,7 @@ import android.location.Location;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
-import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.*;
 
 public class LocationLiveData extends LiveData<Location> {
     private final Context context;
@@ -46,7 +41,10 @@ public class LocationLiveData extends LiveData<Location> {
             return;
         }
         FusedLocationProviderClient locationProviderClient = getFusedLocationProviderClient();
-        LocationRequest locationRequest = LocationRequest.create().setInterval(1000).setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        //TODO change to update only after a certain distance travelled
+        LocationRequest locationRequest = LocationRequest.create()
+                .setInterval(10000)
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         Looper looper = Looper.myLooper();
         locationProviderClient.requestLocationUpdates(locationRequest, locationCallback, looper);
     }

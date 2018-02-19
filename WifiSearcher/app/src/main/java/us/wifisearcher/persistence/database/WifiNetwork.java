@@ -15,12 +15,17 @@ public class WifiNetwork {
     private String macAddress;
 
     private int signalStrength;
-
-//    private LatLng position;
-
+    private String position;
     private String keyType;
-
     private String encryption;
+
+    public String getPosition() {
+        return position;
+    }
+
+    public void setPosition(String position) {
+        this.position = position;
+    }
 
     public int getId() {
         return id;
@@ -61,14 +66,6 @@ public class WifiNetwork {
     public void setSignalStrength(int signalStrength) {
         this.signalStrength = signalStrength;
     }
-
-//    public LatLng getPosition() {
-//        return position;
-//    }
-
-//    public void setPosition(LatLng position) {
-//        this.position = position;
-//    }
 
     public String getKeyType() {
         return keyType;

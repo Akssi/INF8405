@@ -4,33 +4,33 @@ import android.Manifest;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.pm.PackageManager;
-import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
-
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import us.wifisearcher.persistence.database.WifiNetwork;
+
+import java.util.List;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private static final int PERMISSION_REQUEST_LOCATION = 0;
-    private GoogleMap mMap;
-    final Observer<Location> locationObserver = new Observer<Location>() {
-        @Override
-        public void onChanged(final Location newLoc) {
-            System.out.println("New Location in activity");
-            LatLng newLatLong = new LatLng(newLoc.getLatitude(), newLoc.getLongitude());
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(newLatLong));
+    private final Observer<List<WifiNetwork>> wifiNetworksObserver = wifiNetworks -> {
+        if (!wifiNetworks.isEmpty()) {
+            for (WifiNetwork wifiNetwork : wifiNetworks) {
+                System.out.println("Wifi at location : " + wifiNetwork.getPosition() + " with SSID: " + wifiNetwork.getName());
+            }
         }
     };
     private WifiSearcherViewModel viewModel;
+    private GoogleMap mMap;
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -39,7 +39,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         switch (requestCode) {
             case PERMISSION_REQUEST_LOCATION:
                 if (grantResults.length > 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-                    viewModel.getLocation().observe(this, locationObserver);
+                    viewModel.getNetworkLiveData().observe(this, this.wifiNetworksObserver);
                 }
         }
     }
@@ -61,7 +61,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_LOCATION);
         } else {
-            viewModel.getLocation().observe(this, locationObserver);
+            viewModel.getNetworkLiveData().observe(this, this.wifiNetworksObserver);
         }
 
 
