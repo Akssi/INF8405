@@ -4,18 +4,17 @@ import android.app.Application;
 import android.arch.lifecycle.AndroidViewModel;
 import android.arch.lifecycle.MediatorLiveData;
 import android.location.Location;
-import android.net.wifi.ScanResult;
 import android.support.annotation.NonNull;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Inject;
+
 import us.wifisearcher.persistence.WifiNetworkRepository;
 import us.wifisearcher.persistence.database.WifiNetwork;
 import us.wifisearcher.services.LocationLiveData;
 import us.wifisearcher.services.WifiLiveData;
-
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
-
-import static android.net.wifi.WifiManager.calculateSignalLevel;
 
 public class WifiSearcherViewModel extends AndroidViewModel {
 
@@ -53,12 +52,7 @@ public class WifiSearcherViewModel extends AndroidViewModel {
             networkLiveData.postValue(wifiNetworks);
         });
         this.networkLiveData.addSource(wifiLiveData, scanResults -> {
-            for (ScanResult network : scanResults) {
-                WifiNetwork wifiNetwork = new WifiNetwork();
-                wifiNetwork.setName(network.SSID);
-                wifiNetwork.setMacAddress(network.BSSID);
-                wifiNetwork.setSignalStrength(calculateSignalLevel(network.level, 5));
-                wifiNetwork.setEncryption(network.capabilities);
+            for (WifiNetwork wifiNetwork : scanResults) {
                 wifiNetwork.setPosition(this.currentLocation.getLatitude() + "," + this.currentLocation.getLongitude());
                 //TODO Need to solve dependency injection issue to save to database
 //                networkRepository.saveNetwork(wifiNetwork);

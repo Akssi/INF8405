@@ -8,9 +8,14 @@ import android.content.IntentFilter;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class WifiLiveData extends LiveData<List<ScanResult>> {
+import us.wifisearcher.persistence.database.WifiNetwork;
+
+import static android.net.wifi.WifiManager.calculateSignalLevel;
+
+public class WifiLiveData extends LiveData<List<WifiNetwork>> {
     private WifiManager wifiManager;
     private Context context;
     private BroadcastReceiver broadcastReceiver;
@@ -32,7 +37,16 @@ public class WifiLiveData extends LiveData<List<ScanResult>> {
         if (discoveredNetworks.isEmpty()) {
             setValue(null);
         } else {
-            setValue(discoveredNetworks);
+            List<WifiNetwork> networks = new ArrayList<>();
+            for (ScanResult scanResult : discoveredNetworks) {
+                WifiNetwork wifiNetwork = new WifiNetwork();
+                wifiNetwork.setName(scanResult.SSID);
+                wifiNetwork.setMacAddress(scanResult.BSSID);
+                wifiNetwork.setSignalStrength(calculateSignalLevel(scanResult.level, 5));
+                wifiNetwork.setEncryption(scanResult.capabilities);
+            }
+
+            setValue(networks);
         }
     }
 

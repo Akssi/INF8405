@@ -19,6 +19,16 @@ public class WifiNetwork {
     private String keyType;
     private String encryption;
 
+    public WifiNetwork() {
+        this.id = -1;
+        this.name = "N/A";
+        this.passwordLockState = "N/A";
+        this.macAddress = "N/A";
+        this.signalStrength = -1;
+        this.keyType = "N/A";
+        this.encryption = "N/A";
+    }
+
     public String getPosition() {
         return position;
     }
