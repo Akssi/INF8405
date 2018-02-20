@@ -49,6 +49,7 @@ public class WifiSearcherViewModel extends AndroidViewModel {
             networkLiveData.postValue(wifiNetworks);
         });
         this.networkLiveData.addSource(wifiLiveData, scanResults -> {
+            wifiNetworks.clear();
             for (WifiNetwork wifiNetwork : scanResults) {
                 wifiNetwork.setLocation(this.currentLocation);
                 //TODO Need to solve dependency injection issue to save to database
