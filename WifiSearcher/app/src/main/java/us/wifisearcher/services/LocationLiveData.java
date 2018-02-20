@@ -41,9 +41,9 @@ public class LocationLiveData extends LiveData<Location> {
             return;
         }
         FusedLocationProviderClient locationProviderClient = getFusedLocationProviderClient();
-        //TODO change to update only after a certain distance travelled
         LocationRequest locationRequest = LocationRequest.create()
-                .setInterval(10000)
+                .setInterval(5000)
+                .setSmallestDisplacement(15)
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         Looper looper = Looper.myLooper();
         locationProviderClient.requestLocationUpdates(locationRequest, locationCallback, looper);
