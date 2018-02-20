@@ -7,11 +7,10 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
+import us.wifisearcher.persistence.database.WifiNetwork;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import us.wifisearcher.persistence.database.WifiNetwork;
 
 import static android.net.wifi.WifiManager.calculateSignalLevel;
 
@@ -44,6 +43,7 @@ public class WifiLiveData extends LiveData<List<WifiNetwork>> {
                 wifiNetwork.setMacAddress(scanResult.BSSID);
                 wifiNetwork.setSignalStrength(calculateSignalLevel(scanResult.level, 5));
                 wifiNetwork.setEncryption(scanResult.capabilities);
+                networks.add(wifiNetwork);
             }
 
             setValue(networks);
