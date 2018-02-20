@@ -4,8 +4,10 @@ import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
 import android.location.Location;
 
+import java.io.Serializable;
+
 @Entity
-public class WifiNetwork {
+public class WifiNetwork implements Serializable {
     @PrimaryKey
     private int id;
 

@@ -5,14 +5,16 @@ import android.arch.lifecycle.AndroidViewModel;
 import android.arch.lifecycle.MediatorLiveData;
 import android.location.Location;
 import android.support.annotation.NonNull;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Inject;
+
 import us.wifisearcher.persistence.WifiNetworkRepository;
 import us.wifisearcher.persistence.database.WifiNetwork;
 import us.wifisearcher.services.LocationLiveData;
 import us.wifisearcher.services.WifiLiveData;
-
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
 
 public class WifiSearcherViewModel extends AndroidViewModel {
 
@@ -68,4 +70,6 @@ public class WifiSearcherViewModel extends AndroidViewModel {
     public LocationLiveData getLocationLiveData() {
         return locationLiveData;
     }
+
+    //public WifiNetwork getWifiNetwork(LatLng position) { return networkRepository.getNetwork(position); }
 }

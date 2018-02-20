@@ -13,16 +13,23 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.widget.Toast;
+
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import us.wifisearcher.persistence.database.WifiNetwork;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.List;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+import us.wifisearcher.fragments.Card;
+import us.wifisearcher.persistence.database.WifiNetwork;
+
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
+        GoogleMap.OnMarkerClickListener,
+        Card.OnCardFragmentInteractionListener {
 
     private static final int PERMISSION_REQUEST_LOCATION = 0;
     private final Observer<List<WifiNetwork>> wifiNetworksObserver = wifiNetworks -> {
@@ -95,5 +102,40 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         currentLocation = new LatLng(-34, 151);
+
+        // Add a marker in Sydney and move the camera
+        LatLng home = new LatLng(45.583673, -73.933948);
+        mMap.addMarker(new MarkerOptions().position(home).title("Home"));
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(home));
+
+        // Set a listener for marker click.
+        mMap.setOnMarkerClickListener(this);
+
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        LatLng position = marker.getPosition();
+
+        // Get wifi network from database
+        //WifiNetwork wifiNetwork = viewModel.getWifiNetwork(position);
+        WifiNetwork wifiNetwork = new WifiNetwork();
+        wifiNetwork.setName("Home");
+        wifiNetwork.setMacAddress("3D:E5:46:18:0F");
+        wifiNetwork.setEncryption("AES");
+        wifiNetwork.setKeyType("WPA");
+        wifiNetwork.setSignalStrength(5);
+        wifiNetwork.setPasswordLockState("Locked");
+
+        Card cardFragment = Card.newInstance(wifiNetwork);
+        cardFragment.show(getFragmentManager(), "Card fragment");
+
+        return true;
+    }
+
+    @Override
+    public void onShareButtonPressed() {
+
+
     }
 }

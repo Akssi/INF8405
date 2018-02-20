@@ -1,5 +1,7 @@
 package us.wifisearcher.persistence;
 
+import com.google.android.gms.maps.model.LatLng;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -17,5 +19,9 @@ public class WifiNetworkRepository {
 
     public void saveNetwork(WifiNetwork wifiNetwork) {
         wifiNetworkDao.save(wifiNetwork);
+    }
+
+    public WifiNetwork getNetwork(LatLng position) {
+        return wifiNetworkDao.load(position).getValue();
     }
 }

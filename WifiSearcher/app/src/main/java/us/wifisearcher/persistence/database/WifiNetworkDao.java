@@ -5,6 +5,8 @@ import android.arch.persistence.room.Dao;
 import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.Query;
 
+import com.google.android.gms.maps.model.LatLng;
+
 import static android.arch.persistence.room.OnConflictStrategy.REPLACE;
 
 @Dao
@@ -14,4 +16,7 @@ public interface WifiNetworkDao {
 
     @Query("SELECT * FROM wifinetwork WHERE id = :id")
     LiveData<WifiNetwork> load(String id);
+
+    @Query("SELECT * FROM wifinetwork WHERE position = :position")
+    LiveData<WifiNetwork> load(LatLng position);
 }
