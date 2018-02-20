@@ -63,4 +63,8 @@ public class WifiSearcherViewModel extends AndroidViewModel {
     public MediatorLiveData<List<WifiNetwork>> getNetworkLiveData() {
         return networkLiveData;
     }
+
+    public LocationLiveData getLocationLiveData() {
+        return locationLiveData;
+    }
 }

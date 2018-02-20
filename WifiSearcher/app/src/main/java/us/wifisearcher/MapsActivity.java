@@ -5,18 +5,19 @@ import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
+import android.widget.Toast;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 import us.wifisearcher.persistence.database.WifiNetwork;
 
 import java.util.List;
@@ -26,13 +27,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final int PERMISSION_REQUEST_LOCATION = 0;
     private final Observer<List<WifiNetwork>> wifiNetworksObserver = wifiNetworks -> {
         if (!wifiNetworks.isEmpty()) {
-            for (WifiNetwork wifiNetwork : wifiNetworks) {
-                System.out.println("Wifi at location : " + wifiNetwork.getLocation().toString() + " with SSID: " + wifiNetwork.getName());
-            }
+            Toast.makeText(this, wifiNetworks.size() + " Wifi networks were found", Toast.LENGTH_SHORT).show();
         }
     };
+    private LatLng currentLocation;
     private WifiSearcherViewModel viewModel;
     private GoogleMap mMap;
+    private final Observer<Location> locationObserver = location -> {
+        currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
+        mMap.setMyLocationEnabled(true);
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 15));
+    };
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -42,6 +48,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             case PERMISSION_REQUEST_LOCATION:
                 if (grantResults.length > 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
                     viewModel.getNetworkLiveData().observe(this, this.wifiNetworksObserver);
+                    viewModel.getLocationLiveData().observe(this, this.locationObserver);
                 }
         }
     }
@@ -64,6 +71,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_LOCATION);
         } else {
             viewModel.getNetworkLiveData().observe(this, this.wifiNetworksObserver);
+            viewModel.getLocationLiveData().observe(this, this.locationObserver);
         }
 
 
@@ -86,11 +94,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
-        mMap.moveCamera(CameraUpdateFactory.zoomTo(12));
+        currentLocation = new LatLng(-34, 151);
     }
 }
