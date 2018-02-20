@@ -2,6 +2,7 @@ package us.wifisearcher.persistence.database;
 
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
+import android.location.Location;
 
 @Entity
 public class WifiNetwork {
@@ -15,7 +16,7 @@ public class WifiNetwork {
     private String macAddress;
 
     private int signalStrength;
-    private String position;
+    private Location location;
     private String keyType;
     private String encryption;
 
@@ -29,12 +30,12 @@ public class WifiNetwork {
         this.encryption = "N/A";
     }
 
-    public String getPosition() {
-        return position;
+    public Location getLocation() {
+        return location;
     }
 
-    public void setPosition(String position) {
-        this.position = position;
+    public void setLocation(Location location) {
+        this.location = location;
     }
 
     public int getId() {

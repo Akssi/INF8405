@@ -11,17 +11,15 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
-
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import us.wifisearcher.persistence.database.WifiNetwork;
 
 import java.util.List;
-
-import us.wifisearcher.persistence.database.WifiNetwork;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -29,7 +27,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private final Observer<List<WifiNetwork>> wifiNetworksObserver = wifiNetworks -> {
         if (!wifiNetworks.isEmpty()) {
             for (WifiNetwork wifiNetwork : wifiNetworks) {
-                System.out.println("Wifi at location : " + wifiNetwork.getPosition() + " with SSID: " + wifiNetwork.getName());
+                System.out.println("Wifi at location : " + wifiNetwork.getLocation().toString() + " with SSID: " + wifiNetwork.getName());
             }
         }
     };
