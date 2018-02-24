@@ -7,6 +7,7 @@ import android.arch.lifecycle.ViewModelProviders;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -160,8 +161,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
-    public void onShareButtonPressed() {
+    public void onShareButtonPressed(WifiNetwork wifiNetwork) {
 
+        Resources res = getResources();
+        String textToSend = res.getString(R.string.wifi_sharing_text) + wifiNetwork.getName() + "\n" + " (dummy location)";
+        Intent sendIntent = new Intent();
+        sendIntent.setAction(Intent.ACTION_SEND);
+        sendIntent.putExtra(Intent.EXTRA_TEXT, textToSend);
+        sendIntent.setType("text/plain");
+        startActivity(sendIntent);
 
     }
 }
