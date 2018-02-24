@@ -36,7 +36,7 @@ public class WifiListActivity extends DaggerAppCompatActivity {
         recyclerViewAdapter.setWifi_key_type(res.getString(R.string.wifi_key_type));
         recyclerViewAdapter.setWifi_encryption(res.getString(R.string.wifi_encryption));
 
-        viewModel.getNetworkLiveData().observe(WifiListActivity.this, wifiNetworks -> recyclerViewAdapter.addItems(wifiNetworks));
+        viewModel.getCurrentLocationWifiNetworksLiveData().observe(WifiListActivity.this, wifiNetworks -> recyclerViewAdapter.addItems(wifiNetworks));
 
     }
 }

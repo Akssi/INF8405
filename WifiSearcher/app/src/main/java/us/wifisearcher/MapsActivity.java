@@ -21,18 +21,17 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import dagger.android.support.DaggerAppCompatActivity;
-import us.wifisearcher.dependencyInjection.Injectable;
 import us.wifisearcher.fragments.Card;
 import us.wifisearcher.persistence.database.WifiNetwork;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
 import java.util.List;
 
 public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyCallback,
         GoogleMap.OnMarkerClickListener,
-        Card.OnCardFragmentInteractionListener, Injectable {
+        Card.OnCardFragmentInteractionListener {
     private static final int PERMISSION_REQUEST_LOCATION = 0;
     private final Observer<List<WifiNetwork>> wifiNetworksObserver = wifiNetworks -> {
         if (!wifiNetworks.isEmpty()) {
@@ -47,7 +46,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     private GoogleMap mMap;
     private final Observer<Location> locationObserver = location -> {
         currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
-        mMap.setMyLocationEnabled(true);
+        mMap.addMarker(new MarkerOptions().position(this.currentLocation).title("Home"));
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 15));
     };
 
@@ -59,7 +58,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         switch (requestCode) {
             case PERMISSION_REQUEST_LOCATION:
                 if (grantResults.length > 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-                    viewModel.getNetworkLiveData().observe(this, this.wifiNetworksObserver);
+                    viewModel.getCurrentLocationWifiNetworksLiveData().observe(this, this.wifiNetworksObserver);
                     viewModel.getLocationLiveData().observe(this, this.locationObserver);
                 }
         }
@@ -78,11 +77,6 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         mapFragment.getMapAsync(this);
 
 
-        // Request Permission
-        if (ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_LOCATION);
-        }
     }
 
     public void switchToListView(View view) {
@@ -104,8 +98,14 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         mMap = googleMap;
         currentLocation = new LatLng(-34, 151);
 
-        viewModel.getNetworkLiveData().observe(this, this.wifiNetworksObserver);
-        viewModel.getLocationLiveData().observe(this, this.locationObserver);
+        // Request Permission
+        if (ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_LOCATION);
+        } else {
+            viewModel.getCurrentLocationWifiNetworksLiveData().observe(this, this.wifiNetworksObserver);
+            viewModel.getLocationLiveData().observe(this, this.locationObserver);
+        }
 
         // Set a listener for marker click.
         mMap.setOnMarkerClickListener(this);
@@ -115,43 +115,31 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     @Override
     public boolean onMarkerClick(Marker marker) {
 
-        // TEST WIFI NETWORK
-        WifiNetwork wifiNetwork = new WifiNetwork();
-        wifiNetwork.setName("Home");
-        wifiNetwork.setMacAddress("3D:E5:46:18:0F");
-        wifiNetwork.setEncryption("AES");
-        wifiNetwork.setKeyType("WPA");
-        wifiNetwork.setSignalStrength(5);
-        wifiNetwork.setPasswordLockState("Locked");
-        List<WifiNetwork> wifiNetworks = new ArrayList<>();
-        wifiNetworks.add(wifiNetwork);
+        viewModel.getCurrentLocationWifiNetworksLiveData().observe(this, wifiNetworks -> {
 
-        // Get wifi networks from database
-        LatLng position = marker.getPosition();
-        //List<WifiNetwork> wifiNetworks = viewModel.getWifiNetwork(position);
+            if (!wifiNetworks.isEmpty()) {
+                String[] wifiNames = new String[wifiNetworks.size()];
+                for (int i = 0; i < wifiNetworks.size(); i++) {
+                    wifiNames[i] = wifiNetworks.get(i).getName();
+                }
+                // setup the alert builder
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle(getResources().getString(R.string.wifi_card_list_title));
 
-        if (true/*wifiNetworks.length() > 1*/) {
-            String[] wifiNames = new String[wifiNetworks.size()];
-            for (int i = 0; i < wifiNetworks.size(); i++) {
-                wifiNames[i] = wifiNetworks.get(i).getName();
+                // add a list
+                builder.setItems(wifiNames, (DialogInterface dialog, int index) -> {
+                    Card cardFragment = Card.newInstance(wifiNetworks.get(index));
+                    cardFragment.show(getFragmentManager(), "Card fragment");
+                });
+
+                // create and show the alert dialog
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            } else {
+                Toast.makeText(this, " No Wifi networks were found", Toast.LENGTH_SHORT).show();
             }
-            // setup the alert builder
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle(getResources().getString(R.string.wifi_card_list_title));
 
-            // add a list
-            builder.setItems(wifiNames, (DialogInterface dialog, int index) -> {
-                Card cardFragment = Card.newInstance(wifiNetworks.get(index));
-                cardFragment.show(getFragmentManager(), "Card fragment");
-            });
-
-            // create and show the alert dialog
-            AlertDialog dialog = builder.create();
-            dialog.show();
-        } else {
-            Card cardFragment = Card.newInstance(wifiNetworks.get(0));
-            cardFragment.show(getFragmentManager(), "Card fragment");
-        }
+        });
         return true;
     }
 
