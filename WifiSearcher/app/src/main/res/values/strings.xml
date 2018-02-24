@@ -11,4 +11,6 @@
     <string name="wifi_mac_address">MAC address: %1$s</string>
     <string name="wifi_key_type">Key type: %1$s</string>
     <string name="wifi_encryption">Key encryption: %1$s</string>
+
+    <string name="wifi_card_list_title">Choose a network</string>
 </resources>
