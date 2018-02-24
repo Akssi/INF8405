@@ -12,4 +12,5 @@
     <string name="wifi_key_type">Key type: %1$s</string>
     <string name="wifi_encryption">Key encryption: %1$s</string>
     <string name="wifi_card_list_title">Choose a network</string>
+    <string name="wifi_sharing_text">I wanted to share with you this wifi : </string>
 </resources>

@@ -83,7 +83,7 @@ public class Card extends DialogFragment {
         final Button button = view.findViewById(R.id.card_share_button);
         button.setOnClickListener((View v) -> {
             if (mListener != null) {
-                mListener.onShareButtonPressed();
+                mListener.onShareButtonPressed(mWifiNetwork);
             }
         });
 
@@ -114,6 +114,6 @@ public class Card extends DialogFragment {
      * activity.
      */
     public interface OnCardFragmentInteractionListener {
-        void onShareButtonPressed();
+        void onShareButtonPressed(WifiNetwork wifiNetwork);
     }
 }
