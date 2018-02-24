@@ -1,7 +1,5 @@
 package us.wifisearcher;
 
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -83,20 +81,11 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         holder.encryptionTextView.setText(String.format(wifi_encryption, wifiNetwork.getEncryption()));
         holder.passwordLockStateTextView.setText(wifiNetwork.getPasswordLockState());
 
-        // Background alternating
-        if (position % 2 == 0) {
-            holder.itemView.setBackgroundColor(Color.parseColor("#FFFFFF"));
-        } else {
-            holder.itemView.setBackgroundColor(Color.parseColor("#FFFAF8FD"));
-        }
-
         // Expanding/Collapsing elements
         if (position == expandedPosition) {
             holder.expandArea.setVisibility(View.VISIBLE);
-            holder.nameTextView.setPaintFlags(holder.nameTextView.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
         } else {
             holder.expandArea.setVisibility(View.GONE);
-            holder.nameTextView.setPaintFlags(holder.nameTextView.getPaintFlags() & ~Paint.UNDERLINE_TEXT_FLAG);
 
         }
     }

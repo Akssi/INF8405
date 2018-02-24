@@ -6,25 +6,44 @@
     android:layout_height="match_parent">
 
     <fragment xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/map"
-    android:name="com.google.android.gms.maps.SupportMapFragment"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context="us.wifisearcher.MapsActivity" />
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context="us.wifisearcher.MapsActivity"
+        tools:layout_editor_absoluteX="0dp"
+        tools:layout_editor_absoluteY="121dp" />
 
     <android.support.v7.widget.AppCompatImageButton
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginRight="16dp"
+        android:id="@+id/battery_since_startup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:background="@null"
+        android:background="#B3FFFFFF"
+        android:elevation="10dp"
+        android:onClick="switchToStatus"
+        android:padding="7dp"
+        android:src="@drawable/ic_battery_unknown_black_24dp"
+        android:tint="@color/cardview_dark_background"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <android.support.v7.widget.AppCompatImageButton
+        android:id="@+id/wifi"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:adjustViewBounds="false"
+        android:background="#B3FFFFFF"
+        android:elevation="10dp"
         android:onClick="switchToListView"
-        android:scaleType="fitCenter"
-        android:src="@drawable/wifi_button"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
+        android:padding="7dp"
+        android:src="@drawable/ic_wifi_black_24dp"
+        android:tint="@color/cardview_dark_background"
+        app:layout_constraintStart_toEndOf="@+id/battery_since_startup"
         app:layout_constraintTop_toTopOf="parent" />
 
 </android.support.constraint.ConstraintLayout>

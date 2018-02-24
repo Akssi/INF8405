@@ -7,18 +7,22 @@ import android.arch.lifecycle.MediatorLiveData;
 import android.arch.lifecycle.Transformations;
 import android.location.Location;
 import android.support.annotation.NonNull;
-import us.wifisearcher.persistence.WifiNetworkRepository;
-import us.wifisearcher.persistence.database.WifiNetwork;
-import us.wifisearcher.services.LocationLiveData;
-import us.wifisearcher.services.WifiLiveData;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.inject.Inject;
+
+import us.wifisearcher.persistence.WifiNetworkRepository;
+import us.wifisearcher.persistence.database.WifiNetwork;
+import us.wifisearcher.services.BatteryLiveData;
+import us.wifisearcher.services.LocationLiveData;
+import us.wifisearcher.services.WifiLiveData;
 
 public class WifiSearcherViewModel extends AndroidViewModel {
 
     private WifiNetworkRepository networkRepository;
+    private BatteryLiveData batteryLiveData;
     private WifiLiveData wifiLiveData;
     private LocationLiveData locationLiveData;
     private MediatorLiveData<List<WifiNetwork>> currentLocationWifiNetworksLiveData;
@@ -31,6 +35,7 @@ public class WifiSearcherViewModel extends AndroidViewModel {
         this.networkRepository = wifiNetworkRepository;
         this.locationLiveData = locationLiveData;
         this.wifiLiveData = wifiLiveData;
+        this.batteryLiveData = new BatteryLiveData(application.getApplicationContext());
         this.currentLocationWifiNetworksLiveData = new MediatorLiveData<>();
         this.wifiNetworks = new ArrayList<>();
         initializeCurrentLocationWifiNetworkLiveData();
@@ -58,6 +63,10 @@ public class WifiSearcherViewModel extends AndroidViewModel {
 
     public LocationLiveData getLocationLiveData() {
         return locationLiveData;
+    }
+
+    public BatteryLiveData getBatteryLiveData() {
+        return batteryLiveData;
     }
 
 

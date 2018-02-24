@@ -1,21 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/relativeLayout"
+    android:id="@+id/card_view"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="20dp">
+    android:layout_gravity="center"
+    app:cardElevation="1dp"
+    card_view:cardCornerRadius="4dp"
+    card_view:cardUseCompatPadding="true"
+    card_view:contentPadding="5dp">
 
     <TextView
         android:id="@+id/wifi_name"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="161dp"
+        android:layout_height="45dp"
+        android:gravity="center_vertical"
         android:text="Wifi test #1"
+        android:textAppearance="@style/TextAppearance.AppCompat.Headline"
         android:textSize="25sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:textAlignment="center" />
 
     <android.support.constraint.ConstraintLayout
         android:id="@+id/expandArea"
@@ -23,7 +30,7 @@
         android:layout_height="190dp"
         android:layout_marginTop="8dp"
         android:gravity="bottom|center"
-        android:visibility="visible"
+        android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/wifi_name">
 
@@ -31,45 +38,51 @@
             android:id="@+id/textView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="40dp"
             android:text="Signal strength"
-            tools:layout_editor_absoluteX="16dp"
-            tools:layout_editor_absoluteY="16dp" />
+            app:layout_constraintStart_toStartOf="parent"
+            card_view:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/mac_address"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
             android:text="MAC address: 10:10:10:10"
-            app:layout_constraintTop_toBottomOf="@+id/textView"
-            tools:layout_editor_absoluteX="16dp" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textView" />
 
         <TextView
             android:id="@+id/key_type"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
             android:layout_marginTop="8dp"
             android:text="Key type: WEP 2"
-            app:layout_constraintTop_toBottomOf="@+id/mac_address"
-            tools:layout_editor_absoluteX="16dp" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/mac_address" />
 
         <TextView
             android:id="@+id/encryption"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
             android:layout_marginTop="8dp"
             android:text="Encryption: 256bit AES"
-            app:layout_constraintTop_toBottomOf="@+id/key_type"
-            tools:layout_editor_absoluteX="16dp" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/key_type" />
 
         <TextView
             android:id="@+id/password_lock_state"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
             android:layout_marginTop="8dp"
             android:text="Twofactor Auth."
-            app:layout_constraintTop_toBottomOf="@+id/encryption"
-            tools:layout_editor_absoluteX="16dp" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/encryption" />
 
         <ImageView
             android:id="@+id/signal_strength"
@@ -80,13 +93,12 @@
             android:layout_marginStart="8dp"
             app:layout_constraintBottom_toTopOf="@+id/mac_address"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.048"
+            app:layout_constraintHorizontal_bias="0.112"
             app:layout_constraintStart_toEndOf="@+id/textView"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.0"
+            app:layout_constraintVertical_bias="0.937"
             app:srcCompat="@drawable/common_google_signin_btn_icon_disabled" />
 
     </android.support.constraint.ConstraintLayout>
 
-
-</android.support.constraint.ConstraintLayout>
+</android.support.v7.widget.CardView>

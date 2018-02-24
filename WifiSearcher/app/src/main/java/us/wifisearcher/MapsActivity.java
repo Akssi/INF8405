@@ -16,6 +16,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.widget.Toast;
+
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -23,17 +24,21 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import java.util.List;
+
+import javax.inject.Inject;
+
 import dagger.android.support.DaggerAppCompatActivity;
 import us.wifisearcher.fragments.Card;
 import us.wifisearcher.persistence.database.WifiNetwork;
-
-import javax.inject.Inject;
-import java.util.List;
+import us.wifisearcher.services.BatteryLiveData;
 
 public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyCallback,
         GoogleMap.OnMarkerClickListener,
         Card.OnCardFragmentInteractionListener {
     private static final int PERMISSION_REQUEST_LOCATION = 0;
+    private static boolean isStartupLaunch = true;
     private final Observer<List<WifiNetwork>> wifiNetworksObserver = wifiNetworks -> {
         if (!wifiNetworks.isEmpty()) {
             Toast.makeText(this, wifiNetworks.size() + " Wifi networks were found", Toast.LENGTH_SHORT).show();
@@ -71,6 +76,11 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         // Get view model
         viewModel = ViewModelProviders.of(this, viewModelFactory).get(WifiSearcherViewModel.class);
 
+        if (isStartupLaunch) {
+            BatteryLiveData.InitializeBatteryStatus(getApplicationContext());
+            isStartupLaunch = false;
+        }
+        System.out.println("Creating activity");
         setContentView(R.layout.activity_maps);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -82,6 +92,11 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
 
     public void switchToListView(View view) {
         Intent intent = new Intent(this, WifiListActivity.class);
+        startActivity(intent);
+    }
+
+    public void switchToStatus(View view) {
+        Intent intent = new Intent(this, StatusActivity.class);
         startActivity(intent);
     }
 
