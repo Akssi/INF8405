@@ -1,11 +1,15 @@
 package us.wifisearcher.persistence;
 
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.Transformations;
 import android.location.Location;
 import us.wifisearcher.persistence.database.WifiNetwork;
 import us.wifisearcher.persistence.database.WifiNetworkDao;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executor;
 
 @Singleton
@@ -27,7 +31,17 @@ public class WifiNetworkRepository {
         executor.execute(() -> wifiNetworkDao.save(wifiNetwork));
     }
 
-    public WifiNetwork getNetwork(Location position) {
-        return wifiNetworkDao.load(position).getValue();
+    public LiveData<List<WifiNetwork>> getNetworks(Location location) {
+        return Transformations.map(wifiNetworkDao.getNetworks(), networks -> {
+            List<WifiNetwork> closeByNetworks = new ArrayList<>();
+            if (location != null) {
+                for (WifiNetwork wifinetwork : networks) {
+                    if (wifinetwork.getLocation().distanceTo(location) < 100) {
+                        closeByNetworks.add(wifinetwork);
+                    }
+                }
+            }
+            return closeByNetworks;
+        });
     }
 }

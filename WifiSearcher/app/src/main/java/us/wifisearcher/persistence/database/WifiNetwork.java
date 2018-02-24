@@ -1,20 +1,20 @@
 package us.wifisearcher.persistence.database;
 
 import android.arch.persistence.room.Entity;
-import android.arch.persistence.room.PrimaryKey;
 import android.location.Location;
+import android.support.annotation.NonNull;
 
 import java.io.Serializable;
 
-@Entity
+@Entity(primaryKeys = {"name", "macAddress"})
 public class WifiNetwork implements Serializable {
-    @PrimaryKey
-    private int id;
 
+    @NonNull
     private String name;
 
     private String passwordLockState;
 
+    @NonNull
     private String macAddress;
 
     private int signalStrength;
@@ -23,7 +23,6 @@ public class WifiNetwork implements Serializable {
     private String encryption;
 
     public WifiNetwork() {
-        this.id = -1;
         this.name = "N/A";
         this.passwordLockState = "N/A";
         this.macAddress = "N/A";
@@ -38,14 +37,6 @@ public class WifiNetwork implements Serializable {
 
     public void setLocation(Location location) {
         this.location = location;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public String getName() {

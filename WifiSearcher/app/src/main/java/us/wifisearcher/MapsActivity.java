@@ -21,17 +21,13 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 import dagger.android.support.DaggerAppCompatActivity;
 import us.wifisearcher.dependencyInjection.Injectable;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import us.wifisearcher.fragments.Card;
 import us.wifisearcher.persistence.database.WifiNetwork;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyCallback,
@@ -86,12 +82,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         if (ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_LOCATION);
-        } else {
-            viewModel.getNetworkLiveData().observe(this, this.wifiNetworksObserver);
-            viewModel.getLocationLiveData().observe(this, this.locationObserver);
         }
-
-
     }
 
     public void switchToListView(View view) {
@@ -113,10 +104,8 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         mMap = googleMap;
         currentLocation = new LatLng(-34, 151);
 
-        // Add a marker in Sydney and move the camera
-        LatLng home = new LatLng(45.583673, -73.933948);
-        mMap.addMarker(new MarkerOptions().position(home).title("Home"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(home));
+        viewModel.getNetworkLiveData().observe(this, this.wifiNetworksObserver);
+        viewModel.getLocationLiveData().observe(this, this.locationObserver);
 
         // Set a listener for marker click.
         mMap.setOnMarkerClickListener(this);
