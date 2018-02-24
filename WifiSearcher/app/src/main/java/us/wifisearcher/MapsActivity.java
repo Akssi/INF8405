@@ -1,8 +1,10 @@
 package us.wifisearcher;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -22,6 +24,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import us.wifisearcher.fragments.Card;
@@ -115,10 +118,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public boolean onMarkerClick(Marker marker) {
-        LatLng position = marker.getPosition();
 
-        // Get wifi network from database
-        //WifiNetwork wifiNetwork = viewModel.getWifiNetwork(position);
+        // TEST WIFI NETWORK
         WifiNetwork wifiNetwork = new WifiNetwork();
         wifiNetwork.setName("Home");
         wifiNetwork.setMacAddress("3D:E5:46:18:0F");
@@ -126,10 +127,35 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         wifiNetwork.setKeyType("WPA");
         wifiNetwork.setSignalStrength(5);
         wifiNetwork.setPasswordLockState("Locked");
+        List<WifiNetwork> wifiNetworks = new ArrayList<>();
+        wifiNetworks.add(wifiNetwork);
 
-        Card cardFragment = Card.newInstance(wifiNetwork);
-        cardFragment.show(getFragmentManager(), "Card fragment");
+        // Get wifi networks from database
+        LatLng position = marker.getPosition();
+        //List<WifiNetwork> wifiNetworks = viewModel.getWifiNetwork(position);
 
+        if (true/*wifiNetworks.length() > 1*/) {
+            String[] wifiNames = new String[wifiNetworks.size()];
+            for (int i = 0; i < wifiNetworks.size(); i++) {
+                wifiNames[i] = wifiNetworks.get(i).getName();
+            }
+            // setup the alert builder
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(getResources().getString(R.string.wifi_card_list_title));
+
+            // add a list
+            builder.setItems(wifiNames, (DialogInterface dialog, int index) -> {
+                Card cardFragment = Card.newInstance(wifiNetworks.get(index));
+                cardFragment.show(getFragmentManager(), "Card fragment");
+            });
+
+            // create and show the alert dialog
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        } else {
+            Card cardFragment = Card.newInstance(wifiNetworks.get(0));
+            cardFragment.show(getFragmentManager(), "Card fragment");
+        }
         return true;
     }
 

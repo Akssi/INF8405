@@ -22,6 +22,7 @@ public class WifiNetworkRepository {
     }
 
     public WifiNetwork getNetwork(LatLng position) {
-        return wifiNetworkDao.load(position).getValue();
+        //return wifiNetworkDao.load(position).getValue();
+        return new WifiNetwork();
     }
 }
