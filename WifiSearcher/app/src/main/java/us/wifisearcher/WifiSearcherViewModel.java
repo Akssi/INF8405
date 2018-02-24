@@ -43,8 +43,7 @@ public class WifiSearcherViewModel extends AndroidViewModel {
             wifiNetworks.clear();
             for (WifiNetwork wifiNetwork : scanResults) {
                 wifiNetwork.setLocation(this.currentLocation);
-                //TODO Need to solve Main thread issue
-//                networkRepository.saveNetwork(wifiNetwork);
+                networkRepository.saveNetwork(wifiNetwork);
                 wifiNetworks.add(wifiNetwork);
             }
             networkLiveData.postValue(wifiNetworks);

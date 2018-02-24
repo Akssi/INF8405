@@ -8,6 +8,8 @@ import us.wifisearcher.persistence.database.WifiDatabase;
 import us.wifisearcher.persistence.database.WifiNetworkDao;
 
 import javax.inject.Singleton;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 @Module(includes = ViewModelModule.class)
 class AppModule {
@@ -22,5 +24,11 @@ class AppModule {
     @Provides
     WifiNetworkDao provideWifiNetworkDao(WifiDatabase wifiDatabase) {
         return wifiDatabase.getWifiNetworkDao();
+    }
+
+    @Provides
+    @Singleton
+    Executor provideSingleThreadExecutor() {
+        return Executors.newSingleThreadExecutor();
     }
 }
