@@ -5,16 +5,14 @@ import android.arch.lifecycle.AndroidViewModel;
 import android.arch.lifecycle.MediatorLiveData;
 import android.location.Location;
 import android.support.annotation.NonNull;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.inject.Inject;
-
 import us.wifisearcher.persistence.WifiNetworkRepository;
 import us.wifisearcher.persistence.database.WifiNetwork;
 import us.wifisearcher.services.LocationLiveData;
 import us.wifisearcher.services.WifiLiveData;
+
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 
 public class WifiSearcherViewModel extends AndroidViewModel {
 
@@ -26,23 +24,14 @@ public class WifiSearcherViewModel extends AndroidViewModel {
     private List<WifiNetwork> wifiNetworks;
 
     @Inject
-    public WifiSearcherViewModel(@NonNull Application application, WifiNetworkRepository wifiNetworkRepository) {
+    public WifiSearcherViewModel(@NonNull Application application, @NonNull WifiNetworkRepository wifiNetworkRepository) {
         super(application);
         networkRepository = wifiNetworkRepository;
         locationLiveData = new LocationLiveData(application.getApplicationContext());
         wifiLiveData = new WifiLiveData(application.getApplicationContext());
         this.networkLiveData = new MediatorLiveData<>();
-        initializeNetworkLiveData();
-    }
-
-    public WifiSearcherViewModel(@NonNull Application application) {
-        super(application);
-        locationLiveData = new LocationLiveData(application.getApplicationContext());
-        wifiLiveData = new WifiLiveData(application.getApplicationContext());
-        this.networkLiveData = new MediatorLiveData<>();
         this.wifiNetworks = new ArrayList<>();
         initializeNetworkLiveData();
-
     }
 
     private void initializeNetworkLiveData() {
@@ -54,7 +43,7 @@ public class WifiSearcherViewModel extends AndroidViewModel {
             wifiNetworks.clear();
             for (WifiNetwork wifiNetwork : scanResults) {
                 wifiNetwork.setLocation(this.currentLocation);
-                //TODO Need to solve dependency injection issue to save to database
+                //TODO Need to solve Main thread issue
 //                networkRepository.saveNetwork(wifiNetwork);
                 wifiNetworks.add(wifiNetwork);
             }

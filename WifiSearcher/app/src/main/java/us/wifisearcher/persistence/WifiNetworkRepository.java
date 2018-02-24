@@ -1,12 +1,11 @@
 package us.wifisearcher.persistence;
 
-import com.google.android.gms.maps.model.LatLng;
+import android.location.Location;
+import us.wifisearcher.persistence.database.WifiNetwork;
+import us.wifisearcher.persistence.database.WifiNetworkDao;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
-import us.wifisearcher.persistence.database.WifiNetwork;
-import us.wifisearcher.persistence.database.WifiNetworkDao;
 
 @Singleton
 public class WifiNetworkRepository {
@@ -21,7 +20,7 @@ public class WifiNetworkRepository {
         wifiNetworkDao.save(wifiNetwork);
     }
 
-    public WifiNetwork getNetwork(LatLng position) {
+    public WifiNetwork getNetwork(Location position) {
         return wifiNetworkDao.load(position).getValue();
     }
 }

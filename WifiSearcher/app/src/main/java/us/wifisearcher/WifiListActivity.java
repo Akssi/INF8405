@@ -1,16 +1,20 @@
 package us.wifisearcher;
 
+import android.arch.lifecycle.ViewModelProvider;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.res.Resources;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import dagger.android.support.DaggerAppCompatActivity;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 
-public class WifiListActivity extends AppCompatActivity {
+public class WifiListActivity extends DaggerAppCompatActivity {
 
+    @Inject
+    ViewModelProvider.Factory viewModelFactory;
     private WifiSearcherViewModel viewModel;
     private RecyclerViewAdapter recyclerViewAdapter;
     private RecyclerView recyclerView;
@@ -25,7 +29,7 @@ public class WifiListActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(recyclerViewAdapter);
 
-        viewModel = ViewModelProviders.of(this).get(WifiSearcherViewModel.class);
+        viewModel = ViewModelProviders.of(this, viewModelFactory).get(WifiSearcherViewModel.class);
 
         Resources res = getResources();
         recyclerViewAdapter.setWifi_mac_address(res.getString(R.string.wifi_mac_address));
