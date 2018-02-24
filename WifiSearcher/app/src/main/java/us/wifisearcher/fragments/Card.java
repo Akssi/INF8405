@@ -80,10 +80,17 @@ public class Card extends DialogFragment {
         TextView passwordLockState = view.findViewById(R.id.card_wifi_password_lock_state);
         passwordLockState.setText(mWifiNetwork.getPasswordLockState());
 
-        final Button button = view.findViewById(R.id.card_share_button);
-        button.setOnClickListener((View v) -> {
+        final Button shareButton = view.findViewById(R.id.card_share_button);
+        shareButton.setOnClickListener((View v) -> {
             if (mListener != null) {
                 mListener.onShareButtonPressed(mWifiNetwork);
+            }
+        });
+
+        final Button navigationButton = view.findViewById(R.id.card_navigation_button);
+        navigationButton.setOnClickListener((View v) -> {
+            if (mListener != null) {
+                mListener.onNavigationButtonPressed(mWifiNetwork);
             }
         });
 
@@ -115,5 +122,7 @@ public class Card extends DialogFragment {
      */
     public interface OnCardFragmentInteractionListener {
         void onShareButtonPressed(WifiNetwork wifiNetwork);
+
+        void onNavigationButtonPressed(WifiNetwork wifiNetwork);
     }
 }

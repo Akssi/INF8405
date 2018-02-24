@@ -31,6 +31,7 @@ public class WifiNetwork implements Serializable {
         this.encryption = "N/A";
     }
 
+
     public Location getLocation() {
         return location;
     }

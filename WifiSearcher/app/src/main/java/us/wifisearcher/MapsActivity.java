@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -133,7 +134,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
 
         viewModel.getCurrentLocationWifiNetworksLiveData().observe(this, wifiNetworks -> {
 
-            if (!wifiNetworks.isEmpty()) {
+            if (wifiNetworks.size() > 1) {
                 String[] wifiNames = new String[wifiNetworks.size()];
                 for (int i = 0; i < wifiNetworks.size(); i++) {
                     wifiNames[i] = wifiNetworks.get(i).getName();
@@ -144,6 +145,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
 
                 // add a list
                 builder.setItems(wifiNames, (DialogInterface dialog, int index) -> {
+                    dialog.cancel();
                     Card cardFragment = Card.newInstance(wifiNetworks.get(index));
                     cardFragment.show(getFragmentManager(), "Card fragment");
                 });
@@ -151,11 +153,17 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
                 // create and show the alert dialog
                 AlertDialog dialog = builder.create();
                 dialog.show();
+            } else if (!wifiNetworks.isEmpty()) {
+                Card cardFragment = Card.newInstance(wifiNetworks.get(0));
+                cardFragment.show(getFragmentManager(), "Card fragment");
             } else {
                 Toast.makeText(this, " No Wifi networks were found", Toast.LENGTH_SHORT).show();
             }
 
+            viewModel.getCurrentLocationWifiNetworksLiveData().removeObserver(this.wifiNetworksObserver);
+
         });
+
         return true;
     }
 
@@ -170,5 +178,15 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         sendIntent.setType("text/plain");
         startActivity(sendIntent);
 
+    }
+
+    @Override
+    public void onNavigationButtonPressed(WifiNetwork wifiNetwork) {
+        Location location = wifiNetwork.getLocation();
+
+        Uri gmmIntentUri = Uri.parse("google.navigation:q=" + location.getLatitude() + "," + location.getLongitude());
+        Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+        mapIntent.setPackage("com.google.android.apps.maps");
+        startActivity(mapIntent);
     }
 }

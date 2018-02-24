@@ -123,12 +123,28 @@
 
     </LinearLayout>
 
-    <Button
-        android:id="@+id/card_share_button"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
         android:layout_marginTop="4dp"
-        android:text="@string/share" />
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/card_share_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="4dp"
+            android:text="@string/share" />
+
+        <Button
+            android:id="@+id/card_navigation_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="4dp"
+            android:text="@string/navigation" />
+
+    </LinearLayout>
 
 </LinearLayout>

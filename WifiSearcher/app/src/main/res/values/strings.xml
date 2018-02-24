@@ -3,6 +3,7 @@
     <string name="title_activity_maps">Map</string>
 
     <string name="share">Share</string>
+    <string name="navigation">Navigation</string>
     <string name="bssid">BSSID</string>
     <string name="encryption">Encryption</string>
     <string name="rssi">Received signal strength indicator</string>lock_state
