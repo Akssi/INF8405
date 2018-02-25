@@ -7,17 +7,15 @@ import android.arch.lifecycle.MediatorLiveData;
 import android.arch.lifecycle.Transformations;
 import android.location.Location;
 import android.support.annotation.NonNull;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.inject.Inject;
-
 import us.wifisearcher.persistence.WifiNetworkRepository;
 import us.wifisearcher.persistence.database.WifiNetwork;
 import us.wifisearcher.services.BatteryLiveData;
 import us.wifisearcher.services.LocationLiveData;
 import us.wifisearcher.services.WifiLiveData;
+
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 
 public class WifiSearcherViewModel extends AndroidViewModel {
 
@@ -30,12 +28,12 @@ public class WifiSearcherViewModel extends AndroidViewModel {
     private List<WifiNetwork> wifiNetworks;
 
     @Inject
-    public WifiSearcherViewModel(@NonNull Application application, @NonNull WifiNetworkRepository wifiNetworkRepository, @NonNull LocationLiveData locationLiveData, @NonNull WifiLiveData wifiLiveData) {
+    public WifiSearcherViewModel(@NonNull Application application, @NonNull WifiNetworkRepository wifiNetworkRepository, @NonNull LocationLiveData locationLiveData, @NonNull WifiLiveData wifiLiveData, @NonNull BatteryLiveData batteryLiveData) {
         super(application);
         this.networkRepository = wifiNetworkRepository;
         this.locationLiveData = locationLiveData;
         this.wifiLiveData = wifiLiveData;
-        this.batteryLiveData = new BatteryLiveData(application.getApplicationContext());
+        this.batteryLiveData = batteryLiveData;
         this.currentLocationWifiNetworksLiveData = new MediatorLiveData<>();
         this.wifiNetworks = new ArrayList<>();
         initializeCurrentLocationWifiNetworkLiveData();

@@ -6,6 +6,7 @@ import dagger.Module;
 import dagger.Provides;
 import us.wifisearcher.persistence.database.WifiDatabase;
 import us.wifisearcher.persistence.database.WifiNetworkDao;
+import us.wifisearcher.services.BatteryLiveData;
 import us.wifisearcher.services.LocationLiveData;
 import us.wifisearcher.services.WifiLiveData;
 
@@ -44,5 +45,11 @@ class AppModule {
     @Provides
     LocationLiveData provideLocationLiveData(Application application) {
         return new LocationLiveData(application.getApplicationContext());
+    }
+
+    @Singleton
+    @Provides
+    BatteryLiveData provideBatteryLiveData(Application application) {
+        return new BatteryLiveData(application.getApplicationContext());
     }
 }
