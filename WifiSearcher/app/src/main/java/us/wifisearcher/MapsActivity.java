@@ -63,6 +63,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     }
 
     private void displayNetworksOnMap(List<WifiNetwork> wifiNetworks) {
+        clusterManager.clearItems();
         for (WifiNetwork wifiNetwork : wifiNetworks) {
             LatLng wifiLocation = new LatLng(wifiNetwork.getLocation().getLatitude(), wifiNetwork.getLocation().getLongitude());
             WifiMarker wifiMarker = new WifiMarker(wifiLocation);
