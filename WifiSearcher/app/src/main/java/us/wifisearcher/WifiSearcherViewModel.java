@@ -71,8 +71,19 @@ public class WifiSearcherViewModel extends AndroidViewModel {
     private LiveData<List<WifiNetwork>> getCurrentLocationWifiNetworks() {
         return Transformations.switchMap(locationLiveData, location -> {
             this.currentLocation = location;
-            return this.networkRepository.getNetworks(this.currentLocation);
+            return this.networkRepository.getSurroundingNetworks(this.currentLocation);
         });
+    }
+
+    public LiveData<List<WifiNetwork>> getMapWifiNetworks() {
+        return Transformations.switchMap(locationLiveData, location -> {
+            this.currentLocation = location;
+            return this.networkRepository.getMapNetworks(this.currentLocation);
+        });
+    }
+
+    public LiveData<List<WifiNetwork>> getWifiNetworksSurroundingLocation(Location location) {
+        return this.networkRepository.getSurroundingNetworks(location);
     }
 
 

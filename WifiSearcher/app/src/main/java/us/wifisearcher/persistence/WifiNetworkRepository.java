@@ -3,6 +3,7 @@ package us.wifisearcher.persistence;
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Transformations;
 import android.location.Location;
+import android.support.annotation.NonNull;
 import us.wifisearcher.persistence.database.WifiNetwork;
 import us.wifisearcher.persistence.database.WifiNetworkDao;
 
@@ -14,6 +15,8 @@ import java.util.concurrent.Executor;
 
 @Singleton
 public class WifiNetworkRepository {
+    private static final int SURROUNDING_WIFI_RANGE = 100;
+    private static final int WIFI_MAP_RANGE = 50000;
     private final WifiNetworkDao wifiNetworkDao;
     private final Executor executor;
 
@@ -31,12 +34,21 @@ public class WifiNetworkRepository {
         executor.execute(() -> wifiNetworkDao.save(wifiNetwork));
     }
 
-    public LiveData<List<WifiNetwork>> getNetworks(Location location) {
+    public LiveData<List<WifiNetwork>> getSurroundingNetworks(Location location) {
+        return getNetworksInsideRange(location, SURROUNDING_WIFI_RANGE);
+    }
+
+    public LiveData<List<WifiNetwork>> getMapNetworks(Location location) {
+        return getNetworksInsideRange(location, WIFI_MAP_RANGE);
+    }
+
+    @NonNull
+    private LiveData<List<WifiNetwork>> getNetworksInsideRange(Location location, int range) {
         return Transformations.map(wifiNetworkDao.getNetworks(), networks -> {
             List<WifiNetwork> closeByNetworks = new ArrayList<>();
             if (location != null) {
                 for (WifiNetwork wifinetwork : networks) {
-                    if (wifinetwork.getLocation().distanceTo(location) < 100) {
+                    if (wifinetwork.getLocation().distanceTo(location) < range) {
                         closeByNetworks.add(wifinetwork);
                     }
                 }
