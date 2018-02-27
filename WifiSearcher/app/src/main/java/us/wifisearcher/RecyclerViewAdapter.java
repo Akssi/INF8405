@@ -9,12 +9,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import us.wifisearcher.persistence.database.WifiNetwork;
 
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.RecyclerViewHolder> implements View.OnClickListener {
 
+    private HashMap<String, ArrayList<String>> uniqueSSIDMacAddressesMap = new HashMap<>();
     private List<WifiNetwork> wifiNetworkList = new ArrayList<>();
     private int expandedPosition = -1;
     private String wifi_mac_address;
@@ -59,7 +61,16 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     public void onBindViewHolder(final RecyclerViewHolder holder, int position) {
         WifiNetwork wifiNetwork = wifiNetworkList.get(position);
         holder.nameTextView.setText(wifiNetwork.getName());
-        holder.macAddressTextView.setText(String.format(wifi_mac_address, wifiNetwork.getMacAddress()));
+        // Set list of mac address found nearby
+        StringBuilder macAddressListString = new StringBuilder();
+        macAddressListString.append(wifiNetwork.getMacAddress());
+        for (String macAddress : uniqueSSIDMacAddressesMap.get(wifiNetwork.getName())) {
+            macAddressListString.append(",\n");
+            macAddressListString.append(macAddress);
+        }
+        holder.macAddressTextView.setText(String.format(wifi_mac_address, macAddressListString.toString()));
+
+        // Set image for signal strength indication
         switch (wifiNetwork.getSignalStrength() - 1) {
             case 1:
                 holder.signalStrength.setImageResource(R.drawable.ic_signal_wifi_1_bar_black_24dp);
@@ -96,9 +107,28 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     }
 
     public void addItems(List<WifiNetwork> wififNetworkList) {
-        System.out.println(String.format("Adding %d items to recycler view", wififNetworkList.size()));
         if (wififNetworkList.size() != 0) {
-            this.wifiNetworkList = wififNetworkList;
+            // Clear previous list of wifi networks
+            this.wifiNetworkList = new ArrayList<>();
+            this.uniqueSSIDMacAddressesMap = new HashMap<>();
+
+            // Filter same SSID network
+            List<WifiNetwork> uniqueWififNetworkList = new ArrayList<>();
+            for (WifiNetwork wififNetwork : wififNetworkList) {
+                // If empty SSID skip it
+                if (wififNetwork.getName().isEmpty()) {
+                    continue;
+                }
+                if (uniqueSSIDMacAddressesMap.containsKey(wififNetwork.getName())) {
+                    uniqueSSIDMacAddressesMap.get(wififNetwork.getName()).add(wififNetwork.getMacAddress());
+                } else {
+                    uniqueSSIDMacAddressesMap.put(wififNetwork.getName(), new ArrayList<>());
+                    uniqueWififNetworkList.add(wififNetwork);
+                }
+            }
+
+            // Update wifi network list
+            this.wifiNetworkList = uniqueWififNetworkList;
         }
         notifyDataSetChanged();
     }
