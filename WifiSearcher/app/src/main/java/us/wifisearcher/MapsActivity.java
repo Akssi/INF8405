@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.location.Location;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -23,7 +24,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.maps.android.clustering.ClusterManager;
 import dagger.android.support.DaggerAppCompatActivity;
 import us.wifisearcher.fragments.Card;
 import us.wifisearcher.persistence.database.WifiNetwork;
@@ -41,21 +42,34 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     private final Observer<List<WifiNetwork>> wifiCardObserver = this::showNetworksOnCard;
     @Inject
     ViewModelProvider.Factory viewModelFactory;
-    private LatLng currentLocation;
+    private LatLng currentCoordinates;
+    private Location markerLocation = new Location(LocationManager.GPS_PROVIDER);
     private WifiSearcherViewModel viewModel;
+    private ClusterManager<WifiMarker> clusterManager;
+    private final Observer<List<WifiNetwork>> mapWifiObserver = this::displayNetworksOnMap;
     private GoogleMap mMap;
     private final Observer<Location> locationObserver = this::updateCurrentLocationOnMap;
 
     private void updateCurrentLocationOnMap(Location location) {
-        currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
-        mMap.addMarker(new MarkerOptions().position(this.currentLocation).title("Home"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 15));
+        currentCoordinates = new LatLng(location.getLatitude(), location.getLongitude());
+        mMap.setMyLocationEnabled(true);
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentCoordinates, 15));
     }
 
     private void foundNetworksToast(List<WifiNetwork> wifiNetworks) {
         if (!wifiNetworks.isEmpty()) {
             Toast.makeText(this, wifiNetworks.size() + " Wifi networks were found", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void displayNetworksOnMap(List<WifiNetwork> wifiNetworks) {
+        clusterManager.clearItems();
+        for (WifiNetwork wifiNetwork : wifiNetworks) {
+            LatLng wifiLocation = new LatLng(wifiNetwork.getLocation().getLatitude(), wifiNetwork.getLocation().getLongitude());
+            WifiMarker wifiMarker = new WifiMarker(wifiLocation);
+            clusterManager.addItem(wifiMarker);
+        }
+
     }
 
     @Override
@@ -65,10 +79,18 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         switch (requestCode) {
             case PERMISSION_REQUEST_LOCATION:
                 if (grantResults.length > 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-                    viewModel.getCurrentLocationWifiNetworksLiveData().observe(this, this.wifiToastObserver);
-                    viewModel.getLocationLiveData().observe(this, this.locationObserver);
+                    initializeActivityObservers();
                 }
         }
+    }
+
+    private void initializeActivityObservers() {
+        clusterManager = new ClusterManager<>(this, mMap);
+        mMap.setOnCameraIdleListener(clusterManager);
+        mMap.setOnMarkerClickListener(clusterManager);
+        viewModel.getCurrentLocationWifiNetworksLiveData().observe(this, this.wifiToastObserver);
+        viewModel.getLocationLiveData().observe(this, this.locationObserver);
+        viewModel.getMapWifiNetworks().observe(this, this.mapWifiObserver);
     }
 
     @Override
@@ -112,15 +134,14 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        currentLocation = new LatLng(-34, 151);
+        currentCoordinates = new LatLng(-34, 151);
 
         // Request Permission
         if (ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_LOCATION);
         } else {
-            viewModel.getCurrentLocationWifiNetworksLiveData().observe(this, this.wifiToastObserver);
-            viewModel.getLocationLiveData().observe(this, this.locationObserver);
+            initializeActivityObservers();
         }
 
         // Set a listener for marker click.
@@ -130,7 +151,9 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
 
     @Override
     public boolean onMarkerClick(Marker marker) {
-        viewModel.getCurrentLocationWifiNetworksLiveData().observe(this, this.wifiCardObserver);
+        this.markerLocation.setLatitude(marker.getPosition().latitude);
+        this.markerLocation.setLongitude(marker.getPosition().longitude);
+        viewModel.getWifiNetworksSurroundingLocation(this.markerLocation).observe(this, this.wifiCardObserver);
         return true;
     }
 
