@@ -23,6 +23,8 @@ public class WifiNetwork implements Serializable {
     private Location location;
     private String keyType;
     private String encryption;
+    // -1 = Unchanged, 1 = Favorite, 0 = Not Favorite
+    private int favorite = -1;
 
     public WifiNetwork() {
         this.name = "N/A";
@@ -33,6 +35,13 @@ public class WifiNetwork implements Serializable {
         this.encryption = "N/A";
     }
 
+    public int getFavorite() {
+        return favorite;
+    }
+
+    public void setFavorite(int favorite) {
+        this.favorite = favorite;
+    }
 
     public Location getLocation() {
         return location;

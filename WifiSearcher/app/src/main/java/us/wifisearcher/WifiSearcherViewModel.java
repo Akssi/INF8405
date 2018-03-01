@@ -53,6 +53,10 @@ public class WifiSearcherViewModel extends AndroidViewModel {
         });
     }
 
+    public void updateWifiNetwork(WifiNetwork wifiNetwork) {
+        networkRepository.saveNetwork(wifiNetwork);
+    }
+
     public LocationLiveData getLocationLiveData() {
         return locationLiveData;
     }

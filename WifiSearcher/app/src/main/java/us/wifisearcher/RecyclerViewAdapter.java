@@ -16,6 +16,7 @@ import us.wifisearcher.persistence.database.WifiNetwork;
 
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.RecyclerViewHolder> implements View.OnClickListener {
 
+    private final WifiSearcherViewModel viewModel;
     private HashMap<String, ArrayList<String>> uniqueSSIDMacAddressesMap = new HashMap<>();
     private List<WifiNetwork> wifiNetworkList = new ArrayList<>();
     private int expandedPosition = -1;
@@ -23,8 +24,9 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     private String wifi_key_type;
     private String wifi_encryption;
 
-    public RecyclerViewAdapter(List<WifiNetwork> wifiNetworkList) {
+    public RecyclerViewAdapter(List<WifiNetwork> wifiNetworkList, WifiSearcherViewModel viewModel) {
         this.wifiNetworkList = wifiNetworkList;
+        this.viewModel = viewModel;
     }
 
     @Override
@@ -60,15 +62,27 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     @Override
     public void onBindViewHolder(final RecyclerViewHolder holder, int position) {
         WifiNetwork wifiNetwork = wifiNetworkList.get(position);
-        holder.nameTextView.setText(wifiNetwork.getName());
-        // Set list of mac address found nearby
-        StringBuilder macAddressListString = new StringBuilder();
-        macAddressListString.append(wifiNetwork.getMacAddress());
-        for (String macAddress : uniqueSSIDMacAddressesMap.get(wifiNetwork.getName())) {
-            macAddressListString.append(",\n");
-            macAddressListString.append(macAddress);
+
+        holder.favoriteToggle.setOnClickListener((View v) -> {
+            wifiNetwork.setFavorite(wifiNetwork.getFavorite() == 1 ? 0 : 1);
+            viewModel.updateWifiNetwork(wifiNetwork);
+
+            ImageView button = v.findViewById(R.id.favoriteToggle);
+            if (wifiNetwork.getFavorite() == 1) {
+                button.setImageResource(R.drawable.ic_star_black_32dp);
+            } else {
+                button.setImageResource(R.drawable.ic_star_border_black_32dp);
+            }
+        });
+
+        if (wifiNetwork.getFavorite() == 1) {
+            holder.favoriteToggle.setImageResource(R.drawable.ic_star_black_32dp);
+        } else {
+            holder.favoriteToggle.setImageResource(R.drawable.ic_star_border_black_32dp);
         }
-        holder.macAddressTextView.setText(String.format(wifi_mac_address, macAddressListString.toString()));
+
+        holder.nameTextView.setText(wifiNetwork.getName());
+        holder.macAddressTextView.setText(String.format(wifi_mac_address, wifiNetwork.getMacAddress()));
 
         // Set image for signal strength indication
         switch (wifiNetwork.getSignalStrength() - 1) {
@@ -147,6 +161,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     static class RecyclerViewHolder extends RecyclerView.ViewHolder {
         ConstraintLayout expandArea;
+        private ImageView favoriteToggle;
         private TextView nameTextView;
         private TextView macAddressTextView;
         private ImageView signalStrength;
@@ -156,6 +171,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
         RecyclerViewHolder(View view) {
             super(view);
+            favoriteToggle = view.findViewById(R.id.favoriteToggle);
             nameTextView = view.findViewById(R.id.wifi_name);
             macAddressTextView = view.findViewById(R.id.mac_address);
             signalStrength = view.findViewById(R.id.signal_strength);

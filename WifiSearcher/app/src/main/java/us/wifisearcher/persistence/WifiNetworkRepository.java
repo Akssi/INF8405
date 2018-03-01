@@ -33,7 +33,17 @@ public class WifiNetworkRepository {
     }
 
     private void refreshWifiNetwork(WifiNetwork wifiNetwork) {
-        executor.execute(() -> wifiNetworkDao.save(wifiNetwork));
+        executor.execute(() -> {
+            long id = wifiNetworkDao.save(wifiNetwork);
+            if (id == -1) {
+                // Favorite state unchanged. Take value currently in DB
+                if (wifiNetwork.getFavorite() == -1) {
+                    WifiNetwork currentWifi = wifiNetworkDao.getNetworkByName(wifiNetwork.getName());
+                    wifiNetwork.setFavorite(currentWifi.getFavorite());
+                }
+                wifiNetworkDao.update(wifiNetwork);
+            }
+        });
     }
 
     public LiveData<List<WifiNetwork>> getSurroundingNetworks(Location location, int radius) {

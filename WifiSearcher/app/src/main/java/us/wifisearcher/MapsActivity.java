@@ -71,9 +71,6 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
             WifiMarker wifiMarker = new WifiMarker(wifiLocation);
             clusterManager.addItem(wifiMarker);
         }
-        LatLng wifiLocation = new LatLng(wifiNetworks.get(0).getLocation().getLatitude(), wifiNetworks.get(0).getLocation().getLongitude());
-        WifiMarker wifiMarker = new WifiMarker(wifiLocation);
-        clusterManager.addItem(wifiMarker);
     }
 
     @Override

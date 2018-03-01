@@ -20,15 +20,28 @@
             android:id="@+id/wifi_name"
             android:layout_width="161dp"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:gravity="center_vertical"
             android:paddingBottom="5dp"
             android:paddingTop="5dp"
             android:text="Wifi test #1"
             android:textAppearance="@style/TextAppearance.AppCompat.Headline"
             android:textSize="25sp"
-            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
+            tools:layout_editor_absoluteX="0dp"
             tools:textAlignment="center" />
+
+        <ImageView
+            android:id="@+id/favoriteToggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="8dp"
+            android:scaleType="center"
+            android:src="@drawable/ic_star_border_black_32dp"
+            app:layout_constraintBottom_toBottomOf="@+id/wifi_name"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <android.support.constraint.ConstraintLayout
             android:id="@+id/expandArea"

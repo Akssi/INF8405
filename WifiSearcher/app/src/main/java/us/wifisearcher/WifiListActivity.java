@@ -26,12 +26,13 @@ public class WifiListActivity extends DaggerAppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wifi_list);
 
+        viewModel = ViewModelProviders.of(this, viewModelFactory).get(WifiSearcherViewModel.class);
+
         recyclerView = findViewById(R.id.wifi_list_view);
-        recyclerViewAdapter = new RecyclerViewAdapter(new ArrayList<>());
+        recyclerViewAdapter = new RecyclerViewAdapter(new ArrayList<>(), viewModel);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(recyclerViewAdapter);
 
-        viewModel = ViewModelProviders.of(this, viewModelFactory).get(WifiSearcherViewModel.class);
 
         Resources res = getResources();
         recyclerViewAdapter.setWifi_mac_address(res.getString(R.string.wifi_mac_address));
