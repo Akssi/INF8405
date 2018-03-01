@@ -5,6 +5,9 @@ import dagger.MapKey;
 
 import java.lang.annotation.*;
 
+/**
+ * Class needed to differentiate ViewModels in ViewModeModule
+ */
 @Documented
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)

@@ -9,6 +9,9 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.Map;
 
+/**
+ * Custom ViewModelFactory to use dependency injection with ViewModels
+ */
 @Singleton
 public class WifiSearcherViewModelFactory implements ViewModelProvider.Factory {
     private final Map<Class<? extends ViewModel>, Provider<ViewModel>> creators;

@@ -11,6 +11,9 @@ import java.util.List;
 
 import static android.arch.persistence.room.OnConflictStrategy.IGNORE;
 
+/**
+ * Specifies the available database queries
+ */
 @Dao
 public interface WifiNetworkDao {
     @Insert(onConflict = IGNORE)

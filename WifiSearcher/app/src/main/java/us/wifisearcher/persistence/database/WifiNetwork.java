@@ -7,7 +7,7 @@ import android.support.annotation.NonNull;
 import java.io.Serializable;
 
 /**
- * Class that contains the information of a network.
+ * Class that contains the information of a network. Defines Room database table
  */
 @Entity(primaryKeys = {"name"})
 public class WifiNetwork implements Serializable {

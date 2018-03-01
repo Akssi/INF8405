@@ -14,6 +14,9 @@ import javax.inject.Singleton;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+/**
+ * Class that provides the required dependencies for the App
+ */
 @Module(includes = ViewModelModule.class)
 class AppModule {
 

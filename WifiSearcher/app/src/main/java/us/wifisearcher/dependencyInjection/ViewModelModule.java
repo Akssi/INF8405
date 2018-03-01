@@ -7,6 +7,9 @@ import dagger.Module;
 import dagger.multibindings.IntoMap;
 import us.wifisearcher.WifiSearcherViewModel;
 
+/**
+ * Module that binds the custom ViewModelFactory the Apps ViewModels
+ */
 @Module
 abstract class ViewModelModule {
     @Binds
