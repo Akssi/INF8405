@@ -80,5 +80,9 @@ public class WifiSearcherViewModel extends AndroidViewModel {
         return this.networkRepository.getSurroundingNetworks(location, radius);
     }
 
+    public LiveData<List<WifiNetwork>> getWifiNetworksSurroundingLocation(Location location) {
+        return this.networkRepository.getSurroundingNetworks(location);
+    }
+
 
 }

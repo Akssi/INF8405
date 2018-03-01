@@ -25,6 +25,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.maps.android.clustering.Cluster;
 import com.google.maps.android.clustering.ClusterManager;
 
@@ -42,7 +43,7 @@ import us.wifisearcher.services.BatteryLiveData;
 
 public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyCallback,
         Card.OnCardFragmentInteractionListener,
-        ClusterManager.OnClusterClickListener<WifiMarker> {
+        ClusterManager.OnClusterClickListener<WifiMarker>, GoogleMap.OnMarkerClickListener {
     private static final int PERMISSION_REQUEST_LOCATION = 0;
     private static boolean isStartupLaunch = true;
     @Inject
@@ -70,6 +71,9 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
             WifiMarker wifiMarker = new WifiMarker(wifiLocation);
             clusterManager.addItem(wifiMarker);
         }
+        LatLng wifiLocation = new LatLng(wifiNetworks.get(0).getLocation().getLatitude(), wifiNetworks.get(0).getLocation().getLongitude());
+        WifiMarker wifiMarker = new WifiMarker(wifiLocation);
+        clusterManager.addItem(wifiMarker);
     }
 
     @Override
@@ -87,8 +91,8 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     private void initializeActivityObservers() {
         clusterManager = new ClusterManager<>(this, mMap);
         mMap.setOnCameraIdleListener(clusterManager);
-        mMap.setOnMarkerClickListener(clusterManager);
         clusterManager.setOnClusterClickListener(this);
+
         viewModel.getLocationLiveData().observe(this, this.locationObserver);
         viewModel.getMapWifiNetworks().observe(this, this.mapWifiObserver);
     }
@@ -143,7 +147,18 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         } else {
             initializeActivityObservers();
         }
+        mMap.setOnMarkerClickListener(this);
+    }
 
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        this.markerLocation.setLatitude(marker.getPosition().latitude);
+        this.markerLocation.setLongitude(marker.getPosition().longitude);
+
+        mWifiNetworks = viewModel.getWifiNetworksSurroundingLocation(this.markerLocation);
+        mWifiNetworks.observe(this, this.wifiCardObserver);
+
+        return true;
     }
 
     @Override
