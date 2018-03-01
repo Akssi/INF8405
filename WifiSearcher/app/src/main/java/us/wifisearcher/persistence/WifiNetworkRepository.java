@@ -4,14 +4,16 @@ import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Transformations;
 import android.location.Location;
 import android.support.annotation.NonNull;
-import us.wifisearcher.persistence.database.WifiNetwork;
-import us.wifisearcher.persistence.database.WifiNetworkDao;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+import us.wifisearcher.persistence.database.WifiNetwork;
+import us.wifisearcher.persistence.database.WifiNetworkDao;
 
 @Singleton
 public class WifiNetworkRepository {
@@ -32,6 +34,10 @@ public class WifiNetworkRepository {
 
     private void refreshWifiNetwork(WifiNetwork wifiNetwork) {
         executor.execute(() -> wifiNetworkDao.save(wifiNetwork));
+    }
+
+    public LiveData<List<WifiNetwork>> getSurroundingNetworks(Location location, int radius) {
+        return getNetworksInsideRange(location, radius + SURROUNDING_WIFI_RANGE);
     }
 
     public LiveData<List<WifiNetwork>> getSurroundingNetworks(Location location) {

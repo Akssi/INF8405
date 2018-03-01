@@ -18,6 +18,8 @@ public class WifiNetwork implements Serializable {
     private String macAddress;
 
     private int signalStrength;
+
+
     private Location location;
     private String keyType;
     private String encryption;

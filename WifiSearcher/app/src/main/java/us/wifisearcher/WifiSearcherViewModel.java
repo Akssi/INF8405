@@ -7,15 +7,17 @@ import android.arch.lifecycle.MediatorLiveData;
 import android.arch.lifecycle.Transformations;
 import android.location.Location;
 import android.support.annotation.NonNull;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Inject;
+
 import us.wifisearcher.persistence.WifiNetworkRepository;
 import us.wifisearcher.persistence.database.WifiNetwork;
 import us.wifisearcher.services.BatteryLiveData;
 import us.wifisearcher.services.LocationLiveData;
 import us.wifisearcher.services.WifiLiveData;
-
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
 
 public class WifiSearcherViewModel extends AndroidViewModel {
 
@@ -42,14 +44,16 @@ public class WifiSearcherViewModel extends AndroidViewModel {
     private void initializeCurrentLocationWifiNetworkLiveData() {
         this.currentLocationWifiNetworksLiveData.addSource(locationLiveData, location -> {
             this.currentLocation = location;
-            currentLocationWifiNetworksLiveData.postValue(wifiNetworks);
+            //currentLocationWifiNetworksLiveData.postValue(wifiNetworks);
         });
         this.currentLocationWifiNetworksLiveData.addSource(wifiLiveData, scanResults -> {
-            for (WifiNetwork wifiNetwork : scanResults) {
-                wifiNetwork.setLocation(this.currentLocation);
-                networkRepository.saveNetwork(wifiNetwork);
+            if (currentLocation != null) {
+                for (WifiNetwork wifiNetwork : scanResults) {
+                    wifiNetwork.setLocation(this.currentLocation);
+                    networkRepository.saveNetwork(wifiNetwork);
+                }
             }
-            currentLocationWifiNetworksLiveData.postValue(wifiNetworks);
+            //currentLocationWifiNetworksLiveData.postValue(wifiNetworks);
 
         });
         this.currentLocationWifiNetworksLiveData.addSource(this.getCurrentLocationWifiNetworks(), closeByWifiNetworks -> currentLocationWifiNetworksLiveData.postValue(closeByWifiNetworks));
@@ -82,8 +86,8 @@ public class WifiSearcherViewModel extends AndroidViewModel {
         });
     }
 
-    public LiveData<List<WifiNetwork>> getWifiNetworksSurroundingLocation(Location location) {
-        return this.networkRepository.getSurroundingNetworks(location);
+    public LiveData<List<WifiNetwork>> getWifiNetworksSurroundingLocation(Location location, int radius) {
+        return this.networkRepository.getSurroundingNetworks(location, radius);
     }
 
 

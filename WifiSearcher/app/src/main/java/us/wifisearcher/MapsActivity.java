@@ -2,6 +2,7 @@ package us.wifisearcher;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProvider;
 import android.arch.lifecycle.ViewModelProviders;
@@ -24,7 +25,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
+import com.google.maps.android.clustering.Cluster;
 import com.google.maps.android.clustering.ClusterManager;
 
 import java.util.ArrayList;
@@ -39,14 +40,16 @@ import us.wifisearcher.persistence.database.WifiNetwork;
 import us.wifisearcher.services.BatteryLiveData;
 
 public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyCallback,
-        GoogleMap.OnMarkerClickListener,
-        Card.OnCardFragmentInteractionListener {
+        /*GoogleMap.OnMarkerClickListener,*/
+        Card.OnCardFragmentInteractionListener,
+        ClusterManager.OnClusterClickListener<WifiMarker> {
     private static final int PERMISSION_REQUEST_LOCATION = 0;
     private static boolean isStartupLaunch = true;
     private final Observer<List<WifiNetwork>> wifiToastObserver = this::foundNetworksToast;
-    private final Observer<List<WifiNetwork>> wifiCardObserver = this::showNetworksOnCard;
     @Inject
     ViewModelProvider.Factory viewModelFactory;
+    private LiveData<List<WifiNetwork>> mWifiNetworks;
+    private final Observer<List<WifiNetwork>> wifiCardObserver = this::showNetworksOnCard;
     private LatLng currentCoordinates;
     private Location markerLocation = new Location(LocationManager.GPS_PROVIDER);
     private WifiSearcherViewModel viewModel;
@@ -93,6 +96,8 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         clusterManager = new ClusterManager<>(this, mMap);
         mMap.setOnCameraIdleListener(clusterManager);
         mMap.setOnMarkerClickListener(clusterManager);
+        clusterManager.setOnClusterClickListener(this);
+
         viewModel.getCurrentLocationWifiNetworksLiveData().observe(this, this.wifiToastObserver);
         viewModel.getLocationLiveData().observe(this, this.locationObserver);
         viewModel.getMapWifiNetworks().observe(this, this.mapWifiObserver);
@@ -150,16 +155,42 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         }
 
         // Set a listener for marker click.
-        mMap.setOnMarkerClickListener(this);
+        //mMap.setOnMarkerClickListener(this);
 
     }
 
+//    @Override
+//    public boolean onMarkerClick(Marker marker) {
+//
+////        this.markerLocation.setLatitude(marker.getPosition().latitude);
+////        this.markerLocation.setLongitude(marker.getPosition().longitude);
+////
+////        mWifiNetworks = viewModel.getWifiNetworksSurroundingLocation(this.markerLocation);
+////        mWifiNetworks.observe(this, this.wifiCardObserver);
+//
+//        return true;
+//    }
+
     @Override
-    public boolean onMarkerClick(Marker marker) {
-        this.markerLocation.setLatitude(marker.getPosition().latitude);
-        this.markerLocation.setLongitude(marker.getPosition().longitude);
-        viewModel.getWifiNetworksSurroundingLocation(this.markerLocation).observe(this, this.wifiCardObserver);
+    public boolean onClusterClick(Cluster<WifiMarker> cluster) {
+        LatLng clusterPos = cluster.getPosition();
+        double radius = 0;
+        for (WifiMarker marker : cluster.getItems()) {
+            LatLng markerPos = marker.getPosition();
+            double distance = Math.sqrt(Math.pow(markerPos.latitude - clusterPos.latitude, 2) + Math.pow(markerPos.longitude - clusterPos.longitude, 2));
+            if (distance > radius) {
+                radius = distance;
+            }
+        }
+
+        this.markerLocation.setLatitude(cluster.getPosition().latitude);
+        this.markerLocation.setLongitude(cluster.getPosition().longitude);
+
+        mWifiNetworks = viewModel.getWifiNetworksSurroundingLocation(this.markerLocation, (int) radius);
+        mWifiNetworks.observe(this, this.wifiCardObserver);
+
         return true;
+
     }
 
     private void showNetworksOnCard(List<WifiNetwork> wifiNetworks) {
@@ -214,6 +245,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         } else {
             Toast.makeText(this, " No Wifi networks were found", Toast.LENGTH_SHORT).show();
         }
+        mWifiNetworks.removeObserver(this.wifiCardObserver);
     }
 
     @Override
