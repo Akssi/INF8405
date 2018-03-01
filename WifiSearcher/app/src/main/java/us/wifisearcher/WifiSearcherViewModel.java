@@ -3,7 +3,6 @@ package us.wifisearcher;
 import android.app.Application;
 import android.arch.lifecycle.AndroidViewModel;
 import android.arch.lifecycle.LiveData;
-import android.arch.lifecycle.MediatorLiveData;
 import android.arch.lifecycle.Transformations;
 import android.location.Location;
 import android.support.annotation.NonNull;
@@ -25,7 +24,6 @@ public class WifiSearcherViewModel extends AndroidViewModel {
     private BatteryLiveData batteryLiveData;
     private WifiLiveData wifiLiveData;
     private LocationLiveData locationLiveData;
-    private MediatorLiveData<List<WifiNetwork>> currentLocationWifiNetworksLiveData;
     private Location currentLocation;
     private List<WifiNetwork> wifiNetworks;
 
@@ -36,31 +34,23 @@ public class WifiSearcherViewModel extends AndroidViewModel {
         this.locationLiveData = locationLiveData;
         this.wifiLiveData = wifiLiveData;
         this.batteryLiveData = batteryLiveData;
-        this.currentLocationWifiNetworksLiveData = new MediatorLiveData<>();
         this.wifiNetworks = new ArrayList<>();
         initializeCurrentLocationWifiNetworkLiveData();
     }
 
     private void initializeCurrentLocationWifiNetworkLiveData() {
-        this.currentLocationWifiNetworksLiveData.addSource(locationLiveData, location -> {
+        this.locationLiveData.observeForever(location -> {
             this.currentLocation = location;
-            //currentLocationWifiNetworksLiveData.postValue(wifiNetworks);
+            wifiLiveData.executeScan();
         });
-        this.currentLocationWifiNetworksLiveData.addSource(wifiLiveData, scanResults -> {
-            if (currentLocation != null) {
+        this.wifiLiveData.observeForever(scanResults -> {
+            if (this.currentLocation != null) {
                 for (WifiNetwork wifiNetwork : scanResults) {
                     wifiNetwork.setLocation(this.currentLocation);
                     networkRepository.saveNetwork(wifiNetwork);
                 }
             }
-            //currentLocationWifiNetworksLiveData.postValue(wifiNetworks);
-
         });
-        this.currentLocationWifiNetworksLiveData.addSource(this.getCurrentLocationWifiNetworks(), closeByWifiNetworks -> currentLocationWifiNetworksLiveData.postValue(closeByWifiNetworks));
-    }
-
-    public MediatorLiveData<List<WifiNetwork>> getCurrentLocationWifiNetworksLiveData() {
-        return currentLocationWifiNetworksLiveData;
     }
 
     public LocationLiveData getLocationLiveData() {
@@ -72,7 +62,7 @@ public class WifiSearcherViewModel extends AndroidViewModel {
     }
 
 
-    private LiveData<List<WifiNetwork>> getCurrentLocationWifiNetworks() {
+    public LiveData<List<WifiNetwork>> getCurrentLocationWifiNetworks() {
         return Transformations.switchMap(locationLiveData, location -> {
             this.currentLocation = location;
             return this.networkRepository.getSurroundingNetworks(this.currentLocation);

@@ -41,12 +41,10 @@ import us.wifisearcher.persistence.database.WifiNetwork;
 import us.wifisearcher.services.BatteryLiveData;
 
 public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyCallback,
-        /*GoogleMap.OnMarkerClickListener,*/
         Card.OnCardFragmentInteractionListener,
         ClusterManager.OnClusterClickListener<WifiMarker> {
     private static final int PERMISSION_REQUEST_LOCATION = 0;
     private static boolean isStartupLaunch = true;
-    private final Observer<List<WifiNetwork>> wifiToastObserver = this::foundNetworksToast;
     @Inject
     ViewModelProvider.Factory viewModelFactory;
     private LiveData<List<WifiNetwork>> mWifiNetworks;
@@ -65,12 +63,6 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentCoordinates, 15));
     }
 
-    private void foundNetworksToast(List<WifiNetwork> wifiNetworks) {
-        if (!wifiNetworks.isEmpty()) {
-            Toast.makeText(this, wifiNetworks.size() + " Wifi networks were found", Toast.LENGTH_SHORT).show();
-        }
-    }
-
     private void displayNetworksOnMap(List<WifiNetwork> wifiNetworks) {
         clusterManager.clearItems();
         for (WifiNetwork wifiNetwork : wifiNetworks) {
@@ -78,7 +70,6 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
             WifiMarker wifiMarker = new WifiMarker(wifiLocation);
             clusterManager.addItem(wifiMarker);
         }
-
     }
 
     @Override
@@ -98,8 +89,6 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         mMap.setOnCameraIdleListener(clusterManager);
         mMap.setOnMarkerClickListener(clusterManager);
         clusterManager.setOnClusterClickListener(this);
-
-        viewModel.getCurrentLocationWifiNetworksLiveData().observe(this, this.wifiToastObserver);
         viewModel.getLocationLiveData().observe(this, this.locationObserver);
         viewModel.getMapWifiNetworks().observe(this, this.mapWifiObserver);
     }
@@ -154,6 +143,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         } else {
             initializeActivityObservers();
         }
+
     }
 
     @Override
