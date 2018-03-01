@@ -110,25 +110,9 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         if (wififNetworkList.size() != 0) {
             // Clear previous list of wifi networks
             this.wifiNetworkList = new ArrayList<>();
-            this.uniqueSSIDMacAddressesMap = new HashMap<>();
-
-            // Filter same SSID network
-            List<WifiNetwork> uniqueWififNetworkList = new ArrayList<>();
-            for (WifiNetwork wififNetwork : wififNetworkList) {
-                // If empty SSID skip it
-                if (wififNetwork.getName().isEmpty()) {
-                    continue;
-                }
-                if (uniqueSSIDMacAddressesMap.containsKey(wififNetwork.getName())) {
-                    uniqueSSIDMacAddressesMap.get(wififNetwork.getName()).add(wififNetwork.getMacAddress());
-                } else {
-                    uniqueSSIDMacAddressesMap.put(wififNetwork.getName(), new ArrayList<>());
-                    uniqueWififNetworkList.add(wififNetwork);
-                }
-            }
 
             // Update wifi network list
-            this.wifiNetworkList = uniqueWififNetworkList;
+            this.wifiNetworkList = wififNetworkList;
         }
         notifyDataSetChanged();
     }

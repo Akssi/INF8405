@@ -46,8 +46,10 @@ public class WifiSearcherViewModel extends AndroidViewModel {
         this.wifiLiveData.observeForever(scanResults -> {
             if (this.currentLocation != null) {
                 for (WifiNetwork wifiNetwork : scanResults) {
-                    wifiNetwork.setLocation(this.currentLocation);
-                    networkRepository.saveNetwork(wifiNetwork);
+                    if (!wifiNetwork.getName().isEmpty()) {
+                        wifiNetwork.setLocation(this.currentLocation);
+                        networkRepository.saveNetwork(wifiNetwork);
+                    }
                 }
             }
         });
