@@ -6,10 +6,12 @@ import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import dagger.android.support.DaggerAppCompatActivity;
+
+import java.util.ArrayList;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
+
+import dagger.android.support.DaggerAppCompatActivity;
 
 public class WifiListActivity extends DaggerAppCompatActivity {
 
@@ -36,7 +38,7 @@ public class WifiListActivity extends DaggerAppCompatActivity {
         recyclerViewAdapter.setWifi_key_type(res.getString(R.string.wifi_key_type));
         recyclerViewAdapter.setWifi_encryption(res.getString(R.string.wifi_encryption));
 
-        viewModel.getCurrentLocationWifiNetworksLiveData().observe(WifiListActivity.this, wifiNetworks -> recyclerViewAdapter.addItems(wifiNetworks));
+        viewModel.getCurrentLocationWifiNetworks().observe(WifiListActivity.this, wifiNetworks -> recyclerViewAdapter.addItems(wifiNetworks));
 
     }
 }
