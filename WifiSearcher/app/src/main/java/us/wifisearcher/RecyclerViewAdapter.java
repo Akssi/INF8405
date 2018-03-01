@@ -61,14 +61,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     public void onBindViewHolder(final RecyclerViewHolder holder, int position) {
         WifiNetwork wifiNetwork = wifiNetworkList.get(position);
         holder.nameTextView.setText(wifiNetwork.getName());
-        // Set list of mac address found nearby
-        StringBuilder macAddressListString = new StringBuilder();
-        macAddressListString.append(wifiNetwork.getMacAddress());
-        for (String macAddress : uniqueSSIDMacAddressesMap.get(wifiNetwork.getName())) {
-            macAddressListString.append(",\n");
-            macAddressListString.append(macAddress);
-        }
-        holder.macAddressTextView.setText(String.format(wifi_mac_address, macAddressListString.toString()));
+        holder.macAddressTextView.setText(String.format(wifi_mac_address, wifiNetwork.getMacAddress()));
 
         // Set image for signal strength indication
         switch (wifiNetwork.getSignalStrength() - 1) {

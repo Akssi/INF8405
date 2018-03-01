@@ -91,6 +91,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         mMap.setOnCameraIdleListener(clusterManager);
         clusterManager.setOnClusterClickListener(this);
 
+        viewModel.initializeCurrentLocationWifiNetworkLiveData();
         viewModel.getLocationLiveData().observe(this, this.locationObserver);
         viewModel.getMapWifiNetworks().observe(this, this.mapWifiObserver);
     }
