@@ -22,6 +22,7 @@ public class SerializableWifiNetwork implements Serializable {
     private double longitude;
     private String keyType;
     private String encryption;
+    private int favorite;
 
     public SerializableWifiNetwork(WifiNetwork wifiNetwork) {
         this.name = wifiNetwork.getName();
@@ -32,6 +33,7 @@ public class SerializableWifiNetwork implements Serializable {
         this.encryption = wifiNetwork.getEncryption();
         this.latitude = wifiNetwork.getLocation().getLatitude();
         this.longitude = wifiNetwork.getLocation().getLongitude();
+        this.favorite = wifiNetwork.getFavorite();
     }
 
     public double getLatitude() {
@@ -64,6 +66,14 @@ public class SerializableWifiNetwork implements Serializable {
 
     public String getEncryption() {
         return encryption;
+    }
+
+    public int getFavorite() {
+        return favorite;
+    }
+
+    public void setFavorite(int favorite) {
+        this.favorite = favorite;
     }
 
 }

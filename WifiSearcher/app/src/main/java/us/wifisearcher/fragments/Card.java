@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import us.wifisearcher.R;
@@ -22,6 +23,8 @@ import us.wifisearcher.persistence.database.SerializableWifiNetwork;
  * create an instance of this fragment.
  */
 public class Card extends DialogFragment {
+    private static final String LOCKED_CHAR = "\uD83D\uDD12";
+    private static final String UNLOCKED_CHAR = "\uD83D\uDD13";
 
     private static final String ARG_WIFI_NETWORK = "wifiNetwork";
 
@@ -74,11 +77,30 @@ public class Card extends DialogFragment {
         TextView encryption = view.findViewById(R.id.card_wifi_encryption);
         encryption.setText(mWifiNetwork.getEncryption());
 
-        TextView rssid = view.findViewById(R.id.card_wifi_rssi);
-        rssid.setText(String.valueOf(mWifiNetwork.getSignalStrength()));
-
         TextView passwordLockState = view.findViewById(R.id.card_wifi_password_lock_state);
-        passwordLockState.setText(mWifiNetwork.getPasswordLockState());
+        passwordLockState.setText((mWifiNetwork.getEncryption().equals("OPEN")) ? UNLOCKED_CHAR : LOCKED_CHAR);
+
+        ImageView rssi = view.findViewById(R.id.card_wifi_rssi);
+
+        ImageView favorite = view.findViewById(R.id.favoriteToggle_card);
+
+        // Set image for signal strength indication
+        switch (mWifiNetwork.getSignalStrength() - 1) {
+            case 1:
+                rssi.setImageResource(R.drawable.ic_signal_wifi_1_bar_black_24dp);
+                break;
+            case 2:
+                rssi.setImageResource(R.drawable.ic_signal_wifi_2_bar_black_24dp);
+                break;
+            case 3:
+                rssi.setImageResource(R.drawable.ic_signal_wifi_3_bar_black_24dp);
+                break;
+            case 4:
+                rssi.setImageResource(R.drawable.ic_signal_wifi_4_bar_black_24dp);
+                break;
+            default:
+                rssi.setImageResource(R.drawable.ic_signal_wifi_0_bar_black_24dp);
+        }
 
         final Button shareButton = view.findViewById(R.id.card_share_button);
         shareButton.setOnClickListener((View v) -> {
@@ -93,6 +115,26 @@ public class Card extends DialogFragment {
                 mListener.onNavigationButtonPressed(mWifiNetwork);
             }
         });
+
+        favorite.setOnClickListener((View v) -> {
+            mWifiNetwork.setFavorite(mWifiNetwork.getFavorite() == 1 ? 0 : 1);
+            if (mListener != null) {
+                mListener.onFavoriteButtonPressed(mWifiNetwork);
+            }
+
+            ImageView button = v.findViewById(R.id.favoriteToggle_card);
+            if (mWifiNetwork.getFavorite() == 1) {
+                button.setImageResource(R.drawable.ic_star_black_32dp);
+            } else {
+                button.setImageResource(R.drawable.ic_star_border_black_32dp);
+            }
+        });
+
+        if (mWifiNetwork.getFavorite() == 1) {
+            favorite.setImageResource(R.drawable.ic_star_black_32dp);
+        } else {
+            favorite.setImageResource(R.drawable.ic_star_border_black_32dp);
+        }
 
         return view;
     }
@@ -124,5 +166,7 @@ public class Card extends DialogFragment {
         void onShareButtonPressed(SerializableWifiNetwork wifiNetwork);
 
         void onNavigationButtonPressed(SerializableWifiNetwork wifiNetwork);
+
+        void onFavoriteButtonPressed(SerializableWifiNetwork wifiNetwork);
     }
 }

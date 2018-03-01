@@ -43,8 +43,10 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         Card.OnCardFragmentInteractionListener,
         ClusterManager.OnClusterClickListener<WifiMarker>, GoogleMap.OnMarkerClickListener {
     private static final int PERMISSION_REQUEST_LOCATION = 0;
-    private static final String LOCKED_CHAR = "\uD83D\uDD12 ";
-    private static final String UNLOCKED_CHAR = "\uD83D\uDD13 ";
+    private static final String LOCKED_CHAR = "\uD83D\uDD12";
+    private static final String UNLOCKED_CHAR = "\uD83D\uDD13";
+    private static final String FAVORITE_CHAR = "\u2605";
+    private static final String NOT_FAVORITE_CHAR = "\u2606";
     private static final String OPEN = "Open";
     private static boolean isStartupLaunch = true;
     @Inject
@@ -58,6 +60,20 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     private final Observer<List<WifiNetwork>> mapWifiObserver = this::displayNetworksOnMap;
     private GoogleMap mMap;
     private final Observer<Location> locationObserver = this::updateCurrentLocationOnMap;
+
+    // From StackOverflow : https://stackoverflow.com/questions/837872/calculate-distance-in-meters-when-you-know-longitude-and-latitude-in-java
+    public static float distFrom(float lat1, float lng1, float lat2, float lng2) {
+        double earthRadius = 6371000; //meters
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLng = Math.toRadians(lng2 - lng1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        float dist = (float) (earthRadius * c);
+
+        return dist;
+    }
 
     private void updateCurrentLocationOnMap(Location location) {
         currentCoordinates = new LatLng(location.getLatitude(), location.getLongitude());
@@ -166,7 +182,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         double radius = 0;
         for (WifiMarker marker : cluster.getItems()) {
             LatLng markerPos = marker.getPosition();
-            double distance = Math.sqrt(Math.pow(markerPos.latitude - clusterPos.latitude, 2) + Math.pow(markerPos.longitude - clusterPos.longitude, 2));
+            float distance = distFrom((float) markerPos.latitude, (float) markerPos.longitude, (float) clusterPos.latitude, (float) clusterPos.longitude);
             if (distance > radius) {
                 radius = distance;
             }
@@ -188,11 +204,22 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
             String[] wifiNames = new String[wifiNetworks.size()];
             for (int i = 0; i < wifiNetworks.size(); i++) {
                 WifiNetwork wifiNetwork = wifiNetworks.get(i);
-                if (wifiNetwork.getEncryption().equals(OPEN)) {
-                    wifiNames[i] = UNLOCKED_CHAR + wifiNetwork.getName();
+
+                // Add favorite character
+                if (wifiNetwork.getFavorite() == 1) {
+                    wifiNames[i] = FAVORITE_CHAR;
                 } else {
-                    wifiNames[i] = LOCKED_CHAR + wifiNetwork.getName();
+                    wifiNames[i] = NOT_FAVORITE_CHAR;
                 }
+
+                // Add lock character
+                if (wifiNetwork.getEncryption().equals(OPEN)) {
+                    wifiNames[i] += UNLOCKED_CHAR;
+                } else {
+                    wifiNames[i] += LOCKED_CHAR;
+                }
+
+                wifiNames[i] += "\r" + wifiNetwork.getName();
             }
             // setup the alert builder
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -237,5 +264,22 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
         mapIntent.setPackage("com.google.android.apps.maps");
         startActivity(mapIntent);
+    }
+
+    @Override
+    public void onFavoriteButtonPressed(SerializableWifiNetwork serializableWifiNetwork) {
+        Location location = new Location(new Location(LocationManager.GPS_PROVIDER));
+        location.setLatitude(serializableWifiNetwork.getLatitude());
+        location.setLongitude(serializableWifiNetwork.getLongitude());
+        WifiNetwork wifiNetwork = new WifiNetwork();
+        wifiNetwork.setLocation(location);
+        wifiNetwork.setPasswordLockState(serializableWifiNetwork.getPasswordLockState());
+        wifiNetwork.setKeyType(serializableWifiNetwork.getKeyType());
+        wifiNetwork.setEncryption(serializableWifiNetwork.getEncryption());
+        wifiNetwork.setMacAddress(serializableWifiNetwork.getMacAddress());
+        wifiNetwork.setName(serializableWifiNetwork.getName());
+        wifiNetwork.setFavorite(serializableWifiNetwork.getFavorite());
+
+        viewModel.updateWifiNetwork(wifiNetwork);
     }
 }

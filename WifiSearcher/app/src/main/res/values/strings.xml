@@ -5,8 +5,8 @@
     <string name="share">Share</string>
     <string name="navigation">Navigation</string>
     <string name="bssid">BSSID</string>
+    <string name="rssi">Signal strength</string>
     <string name="encryption">Encryption mechanism</string>
-    <string name="rssi">Received signal strength indicator</string>lock_state
     <string name="lock_state">Password lock state</string>
     <string name="key_type">Security</string>
     <string name="wifi_mac_address">MAC address: %1$s</string>
