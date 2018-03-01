@@ -29,8 +29,6 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.maps.android.clustering.Cluster;
 import com.google.maps.android.clustering.ClusterManager;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -45,6 +43,9 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         Card.OnCardFragmentInteractionListener,
         ClusterManager.OnClusterClickListener<WifiMarker>, GoogleMap.OnMarkerClickListener {
     private static final int PERMISSION_REQUEST_LOCATION = 0;
+    private static final String LOCKED_CHAR = "\uD83D\uDD12 ";
+    private static final String UNLOCKED_CHAR = "\uD83D\uDD13 ";
+    private static final String OPEN = "Open";
     private static boolean isStartupLaunch = true;
     @Inject
     ViewModelProvider.Factory viewModelFactory;
@@ -90,6 +91,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         mMap.setOnCameraIdleListener(clusterManager);
         clusterManager.setOnClusterClickListener(this);
 
+        viewModel.initializeCurrentLocationWifiNetworkLiveData();
         viewModel.getLocationLiveData().observe(this, this.locationObserver);
         viewModel.getMapWifiNetworks().observe(this, this.mapWifiObserver);
     }
@@ -183,34 +185,14 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     private void showNetworksOnCard(List<WifiNetwork> wifiNetworks) {
         if (wifiNetworks.size() > 1) {
 
-            List<WifiNetwork> uniqueWififNetworkList = new ArrayList<>();
-            HashMap<String, ArrayList<String>> uniqueSSIDMacAddressesMap = new HashMap<>();
-
-            // Filter same SSID network
-            for (WifiNetwork wififNetwork : wifiNetworks) {
-                // If empty SSID skip it
-                if (wififNetwork.getName().isEmpty()) {
-                    continue;
-                }
-                if (uniqueSSIDMacAddressesMap.containsKey(wififNetwork.getName())) {
-                    uniqueSSIDMacAddressesMap.get(wififNetwork.getName()).add(wififNetwork.getMacAddress());
+            String[] wifiNames = new String[wifiNetworks.size()];
+            for (int i = 0; i < wifiNetworks.size(); i++) {
+                WifiNetwork wifiNetwork = wifiNetworks.get(i);
+                if (wifiNetwork.getEncryption().equals(OPEN)) {
+                    wifiNames[i] = UNLOCKED_CHAR + wifiNetwork.getName();
                 } else {
-                    uniqueSSIDMacAddressesMap.put(wififNetwork.getName(), new ArrayList<>());
-                    uniqueWififNetworkList.add(wififNetwork);
+                    wifiNames[i] = LOCKED_CHAR + wifiNetwork.getName();
                 }
-            }
-            String[] wifiNames = new String[uniqueWififNetworkList.size()];
-            for (int i = 0; i < uniqueWififNetworkList.size(); i++) {
-                WifiNetwork wifiNetwork = uniqueWififNetworkList.get(i);
-                wifiNames[i] = wifiNetwork.getName();
-                // Build MAC address string with list of MAC address from same SSID
-                StringBuilder macAddressListString = new StringBuilder();
-                macAddressListString.append(wifiNetwork.getMacAddress());
-                for (String macAddress : uniqueSSIDMacAddressesMap.get(wifiNetwork.getName())) {
-                    macAddressListString.append(",\n");
-                    macAddressListString.append(macAddress);
-                }
-                wifiNetwork.setMacAddress(macAddressListString.toString());
             }
             // setup the alert builder
             AlertDialog.Builder builder = new AlertDialog.Builder(this);

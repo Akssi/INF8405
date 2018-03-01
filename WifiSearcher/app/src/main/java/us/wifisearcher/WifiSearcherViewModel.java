@@ -35,10 +35,9 @@ public class WifiSearcherViewModel extends AndroidViewModel {
         this.wifiLiveData = wifiLiveData;
         this.batteryLiveData = batteryLiveData;
         this.wifiNetworks = new ArrayList<>();
-        initializeCurrentLocationWifiNetworkLiveData();
     }
 
-    private void initializeCurrentLocationWifiNetworkLiveData() {
+    public void initializeCurrentLocationWifiNetworkLiveData() {
         this.locationLiveData.observeForever(location -> {
             this.currentLocation = location;
             wifiLiveData.executeScan();
@@ -46,8 +45,10 @@ public class WifiSearcherViewModel extends AndroidViewModel {
         this.wifiLiveData.observeForever(scanResults -> {
             if (this.currentLocation != null) {
                 for (WifiNetwork wifiNetwork : scanResults) {
-                    wifiNetwork.setLocation(this.currentLocation);
-                    networkRepository.saveNetwork(wifiNetwork);
+                    if (!wifiNetwork.getName().isEmpty()) {
+                        wifiNetwork.setLocation(this.currentLocation);
+                        networkRepository.saveNetwork(wifiNetwork);
+                    }
                 }
             }
         });

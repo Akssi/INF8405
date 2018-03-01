@@ -1,18 +1,19 @@
 package us.wifisearcher;
 
 import android.support.constraint.ConstraintLayout;
+import android.support.v7.util.DiffUtil;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import us.wifisearcher.persistence.database.WifiNetwork;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
-import us.wifisearcher.persistence.database.WifiNetwork;
+import java.util.Objects;
 
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.RecyclerViewHolder> implements View.OnClickListener {
 
@@ -120,31 +121,39 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         return wifiNetworkList.size();
     }
 
-    public void addItems(List<WifiNetwork> wififNetworkList) {
-        if (wififNetworkList.size() != 0) {
-            // Clear previous list of wifi networks
-            this.wifiNetworkList = new ArrayList<>();
-            this.uniqueSSIDMacAddressesMap = new HashMap<>();
-
-            // Filter same SSID network
-            List<WifiNetwork> uniqueWififNetworkList = new ArrayList<>();
-            for (WifiNetwork wififNetwork : wififNetworkList) {
-                // If empty SSID skip it
-                if (wififNetwork.getName().isEmpty()) {
-                    continue;
+    public void addItems(List<WifiNetwork> newWifiNetworkList) {
+        if (!newWifiNetworkList.isEmpty()) {
+            DiffUtil.DiffResult result = DiffUtil.calculateDiff(new DiffUtil.Callback() {
+                @Override
+                public int getOldListSize() {
+                    return wifiNetworkList.size();
                 }
-                if (uniqueSSIDMacAddressesMap.containsKey(wififNetwork.getName())) {
-                    uniqueSSIDMacAddressesMap.get(wififNetwork.getName()).add(wififNetwork.getMacAddress());
-                } else {
-                    uniqueSSIDMacAddressesMap.put(wififNetwork.getName(), new ArrayList<>());
-                    uniqueWififNetworkList.add(wififNetwork);
-                }
-            }
 
-            // Update wifi network list
-            this.wifiNetworkList = uniqueWififNetworkList;
+                @Override
+                public int getNewListSize() {
+                    return newWifiNetworkList.size();
+                }
+
+                @Override
+                public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+                    return wifiNetworkList.get(oldItemPosition).getName().equals(newWifiNetworkList.get(newItemPosition).getName());
+                }
+
+                @Override
+                public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+                    WifiNetwork newWifi = newWifiNetworkList.get(newItemPosition);
+                    WifiNetwork oldWifi = wifiNetworkList.get(oldItemPosition);
+                    return newWifi.getName().equals(oldWifi.getName())
+                            && Objects.equals(newWifi.getEncryption(), oldWifi.getEncryption())
+                            && Objects.equals(newWifi.getMacAddress(), oldWifi.getMacAddress())
+                            && Objects.equals(newWifi.getPasswordLockState(), oldWifi.getPasswordLockState())
+                            && Objects.equals(newWifi.getSignalStrength(), oldWifi.getSignalStrength())
+                            && Objects.equals(newWifi.getKeyType(), oldWifi.getKeyType());
+                }
+            });
+            wifiNetworkList = newWifiNetworkList;
+            result.dispatchUpdatesTo(this);
         }
-        notifyDataSetChanged();
     }
 
     public void setWifi_mac_address(String wifi_mac_address) {
