@@ -1,6 +1,7 @@
 package us.wifisearcher;
 
 import android.support.constraint.ConstraintLayout;
+import android.support.v7.util.DiffUtil;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,6 +13,7 @@ import us.wifisearcher.persistence.database.WifiNetwork;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.RecyclerViewHolder> implements View.OnClickListener {
 
@@ -98,11 +100,38 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         return wifiNetworkList.size();
     }
 
-    public void addItems(List<WifiNetwork> wififNetworkList) {
-        if (!wififNetworkList.isEmpty()) {
-            wifiNetworkList.clear();
-            wifiNetworkList.addAll(wififNetworkList);
-            notifyDataSetChanged();
+    public void addItems(List<WifiNetwork> newWifiNetworkList) {
+        if (!newWifiNetworkList.isEmpty()) {
+            DiffUtil.DiffResult result = DiffUtil.calculateDiff(new DiffUtil.Callback() {
+                @Override
+                public int getOldListSize() {
+                    return wifiNetworkList.size();
+                }
+
+                @Override
+                public int getNewListSize() {
+                    return newWifiNetworkList.size();
+                }
+
+                @Override
+                public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+                    return wifiNetworkList.get(oldItemPosition).getName().equals(newWifiNetworkList.get(newItemPosition).getName());
+                }
+
+                @Override
+                public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+                    WifiNetwork newWifi = newWifiNetworkList.get(newItemPosition);
+                    WifiNetwork oldWifi = wifiNetworkList.get(oldItemPosition);
+                    return newWifi.getName().equals(oldWifi.getName())
+                            && Objects.equals(newWifi.getEncryption(), oldWifi.getEncryption())
+                            && Objects.equals(newWifi.getMacAddress(), oldWifi.getMacAddress())
+                            && Objects.equals(newWifi.getPasswordLockState(), oldWifi.getPasswordLockState())
+                            && Objects.equals(newWifi.getSignalStrength(), oldWifi.getSignalStrength())
+                            && Objects.equals(newWifi.getKeyType(), oldWifi.getKeyType());
+                }
+            });
+            wifiNetworkList = newWifiNetworkList;
+            result.dispatchUpdatesTo(this);
         }
     }
 
