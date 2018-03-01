@@ -7,12 +7,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import us.wifisearcher.persistence.database.WifiNetwork;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
-import us.wifisearcher.persistence.database.WifiNetwork;
 
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.RecyclerViewHolder> implements View.OnClickListener {
 
@@ -100,14 +99,11 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     }
 
     public void addItems(List<WifiNetwork> wififNetworkList) {
-        if (wififNetworkList.size() != 0) {
-            // Clear previous list of wifi networks
-            this.wifiNetworkList = new ArrayList<>();
-
-            // Update wifi network list
-            this.wifiNetworkList = wififNetworkList;
+        if (!wififNetworkList.isEmpty()) {
+            wifiNetworkList.clear();
+            wifiNetworkList.addAll(wififNetworkList);
+            notifyDataSetChanged();
         }
-        notifyDataSetChanged();
     }
 
     public void setWifi_mac_address(String wifi_mac_address) {
