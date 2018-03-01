@@ -28,7 +28,7 @@ public class WifiNetwork implements Serializable {
 
     public WifiNetwork() {
         this.name = "N/A";
-        this.passwordLockState = "N/A";
+        this.passwordLockState = "Unknown password state";
         this.macAddress = "N/A";
         this.signalStrength = -1;
         this.keyType = "N/A";
