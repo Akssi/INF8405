@@ -62,7 +62,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     private final Observer<Location> locationObserver = this::updateCurrentLocationOnMap;
 
     // From StackOverflow : https://stackoverflow.com/questions/837872/calculate-distance-in-meters-when-you-know-longitude-and-latitude-in-java
-    public static float distFrom(float lat1, float lng1, float lat2, float lng2) {
+    private static float distFrom(float lat1, float lng1, float lat2, float lng2) {
         double earthRadius = 6371000; //meters
         double dLat = Math.toRadians(lat2 - lat1);
         double dLng = Math.toRadians(lng2 - lng1);
@@ -88,6 +88,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
             WifiMarker wifiMarker = new WifiMarker(wifiLocation);
             clusterManager.addItem(wifiMarker);
         }
+        clusterManager.cluster();
     }
 
     @Override
