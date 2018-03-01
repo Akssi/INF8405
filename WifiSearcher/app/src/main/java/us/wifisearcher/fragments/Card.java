@@ -11,7 +11,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import us.wifisearcher.R;
-import us.wifisearcher.persistence.database.WifiNetwork;
+import us.wifisearcher.persistence.database.SerializableWifiNetwork;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -25,7 +25,7 @@ public class Card extends DialogFragment {
 
     private static final String ARG_WIFI_NETWORK = "wifiNetwork";
 
-    private WifiNetwork mWifiNetwork;
+    private SerializableWifiNetwork mWifiNetwork;
 
     private OnCardFragmentInteractionListener mListener;
 
@@ -40,7 +40,7 @@ public class Card extends DialogFragment {
      * @param wifiNetwork The wifi network to be displayed on a card.
      * @return A new instance of fragment Card.
      */
-    public static Card newInstance(WifiNetwork wifiNetwork) {
+    public static Card newInstance(SerializableWifiNetwork wifiNetwork) {
         Card fragment = new Card();
         Bundle args = new Bundle();
         args.putSerializable(ARG_WIFI_NETWORK, wifiNetwork);
@@ -52,7 +52,7 @@ public class Card extends DialogFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            mWifiNetwork = (WifiNetwork) getArguments().getSerializable(ARG_WIFI_NETWORK);
+            mWifiNetwork = (SerializableWifiNetwork) getArguments().getSerializable(ARG_WIFI_NETWORK);
         }
     }
 
@@ -121,8 +121,8 @@ public class Card extends DialogFragment {
      * activity.
      */
     public interface OnCardFragmentInteractionListener {
-        void onShareButtonPressed(WifiNetwork wifiNetwork);
+        void onShareButtonPressed(SerializableWifiNetwork wifiNetwork);
 
-        void onNavigationButtonPressed(WifiNetwork wifiNetwork);
+        void onNavigationButtonPressed(SerializableWifiNetwork wifiNetwork);
     }
 }
