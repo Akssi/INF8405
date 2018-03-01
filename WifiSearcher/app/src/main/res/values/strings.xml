@@ -14,4 +14,5 @@
     <string name="wifi_encryption">Encryption mechanism: %1$s</string>
     <string name="wifi_card_list_title">Choose a network</string>
     <string name="wifi_sharing_text">I wanted to share with you this wifi : </string>
+    <string name="wifi_position_descriptor">Position : </string>
 </resources>

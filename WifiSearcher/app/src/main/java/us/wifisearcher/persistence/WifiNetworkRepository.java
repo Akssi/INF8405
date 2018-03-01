@@ -17,6 +17,9 @@ import us.wifisearcher.persistence.database.WifiNetworkDao;
 
 import static java.lang.Math.max;
 
+/**
+ * Class that queries the database.
+ */
 @Singleton
 public class WifiNetworkRepository {
     private static final int SURROUNDING_WIFI_RANGE = 100;
@@ -30,6 +33,11 @@ public class WifiNetworkRepository {
         this.executor = executor;
     }
 
+    /**
+     * Saves a {@link WifiNetwork} in the database.
+     *
+     * @param wifiNetwork Network to save.
+     */
     public void saveNetwork(WifiNetwork wifiNetwork) {
         this.refreshWifiNetwork(wifiNetwork);
     }
@@ -52,14 +60,29 @@ public class WifiNetworkRepository {
         });
     }
 
+    /**
+     * Gets the networks around a particular {@param location} given a radius.
+     * @param location Location where to search.
+     * @param radius Radius of the search.
+     * @return The networks around a particular {@param location} given a {@param radius}.
+     */
     public LiveData<List<WifiNetwork>> getSurroundingNetworks(Location location, int radius) {
         return getNetworksInsideRange(location, radius + SURROUNDING_WIFI_RANGE);
     }
 
+    /**
+     * Gets the networks around a particular {@param location} in a default radius.
+     * @param location Location where to search.
+     * @return The networks around a particular {@param location}.
+     */
     public LiveData<List<WifiNetwork>> getSurroundingNetworks(Location location) {
         return getNetworksInsideRange(location, SURROUNDING_WIFI_RANGE);
     }
 
+    /**
+     * Gets the networks on the entire map.
+     * @return The networks on the entire map.
+     */
     public LiveData<List<WifiNetwork>> getMapNetworks(Location location) {
         return getNetworksInsideRange(location, WIFI_MAP_RANGE);
     }

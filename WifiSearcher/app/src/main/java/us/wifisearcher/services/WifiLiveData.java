@@ -44,6 +44,8 @@ public class WifiLiveData extends LiveData<List<WifiNetwork>> {
     }
 
     /**
+     * Extracts the security from a {@link ScanResult}
+     * @param scanResult The information return by a scan.
      * @return The security of a given {@link ScanResult}.
      */
     public static String getScanResultSecurity(ScanResult scanResult) {
@@ -54,11 +56,12 @@ public class WifiLiveData extends LiveData<List<WifiNetwork>> {
                 return securityModes[i];
             }
         }
-
         return OPEN;
     }
 
     /**
+     * Extracts encryption mechanism from a {@link ScanResult}
+     * @param scanResult The information return by a scan.
      * @return The encryption mechanism of a given {@link ScanResult}.
      */
     public static String getScanResultEncryption(ScanResult scanResult) {
@@ -75,6 +78,9 @@ public class WifiLiveData extends LiveData<List<WifiNetwork>> {
         return encryption.toString();
     }
 
+    /**
+     * Scan for networks.
+     */
     public void executeScan() {
         wifiManager.startScan();
     }

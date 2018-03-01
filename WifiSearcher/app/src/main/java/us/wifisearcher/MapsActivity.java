@@ -113,6 +113,9 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         viewModel.getMapWifiNetworks().observe(this, this.mapWifiObserver);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -128,15 +131,22 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
-
     }
 
+    /**
+     * This function starts the WifiListActivity
+     *
+     * @param view The view of the button.
+     */
     public void switchToListView(View view) {
         Intent intent = new Intent(this, WifiListActivity.class);
         startActivity(intent);
     }
 
+    /**
+     * This function starts the StatusActivity
+     * @param view The view of the button.
+     */
     public void switchToStatus(View view) {
         Intent intent = new Intent(this, StatusActivity.class);
         startActivity(intent);
@@ -166,17 +176,27 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         mMap.setOnMarkerClickListener(this);
     }
 
+    /**
+     * This function is called when a marker is clicked.
+     * It queries the database for networks to ultimately show them to the user.
+     * @param marker The marker that was clicked on.
+     * @return true if the listener has consumed the event (i.e., the default behavior should not occur); false otherwise
+     */
     @Override
     public boolean onMarkerClick(Marker marker) {
         this.markerLocation.setLatitude(marker.getPosition().latitude);
         this.markerLocation.setLongitude(marker.getPosition().longitude);
-
         mWifiNetworks = viewModel.getWifiNetworksSurroundingLocation(this.markerLocation);
         mWifiNetworks.observe(this, this.wifiCardObserver);
-
         return true;
     }
 
+    /**
+     * This function is called when a cluster is clicked.
+     * It queries the database for networks to ultimately show them to the user.
+     * @param cluster The cluster that was clicked on.
+     * @return true if the listener has consumed the event (i.e., the default behavior should not occur); false otherwise
+     */
     @Override
     public boolean onClusterClick(Cluster<WifiMarker> cluster) {
         LatLng clusterPos = cluster.getPosition();
@@ -188,15 +208,11 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
                 radius = distance;
             }
         }
-
         this.markerLocation.setLatitude(cluster.getPosition().latitude);
         this.markerLocation.setLongitude(cluster.getPosition().longitude);
-
         mWifiNetworks = viewModel.getWifiNetworksSurroundingLocation(this.markerLocation, (int) radius);
         mWifiNetworks.observe(this, this.wifiCardObserver);
-
         return true;
-
     }
 
     private void showNetworksOnCard(List<WifiNetwork> wifiNetworks) {
@@ -245,28 +261,38 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         mWifiNetworks.removeObserver(this.wifiCardObserver);
     }
 
+    /**
+     * Shares the name and position of a network.
+     * @param wifiNetwork The network to share.
+     */
     @Override
     public void onShareButtonPressed(SerializableWifiNetwork wifiNetwork) {
-
         Resources res = getResources();
-        String textToSend = res.getString(R.string.wifi_sharing_text) + wifiNetwork.getName() + "\n" + "Position : " + wifiNetwork.getLatitude() + "," + wifiNetwork.getLongitude();
+        String textToSend = res.getString(R.string.wifi_sharing_text) + wifiNetwork.getName() + "\n" + res.getString(R.string.wifi_position_descriptor) + wifiNetwork.getLatitude() + "," + wifiNetwork.getLongitude();
         Intent sendIntent = new Intent();
         sendIntent.setAction(Intent.ACTION_SEND);
         sendIntent.putExtra(Intent.EXTRA_TEXT, textToSend);
         sendIntent.setType("text/plain");
         startActivity(sendIntent);
-
     }
 
+    /**
+     * Starts the google map navigation with the location of a network
+     * @param wifiNetwork The network to navigate to.
+     */
     @Override
     public void onNavigationButtonPressed(SerializableWifiNetwork wifiNetwork) {
-
         Uri gmmIntentUri = Uri.parse("google.navigation:q=" + wifiNetwork.getLatitude() + "," + wifiNetwork.getLongitude());
         Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
         mapIntent.setPackage("com.google.android.apps.maps");
         startActivity(mapIntent);
     }
 
+
+    /**
+     * Sets a particular network as favorite.
+     * @param serializableWifiNetwork The network to be set as favorite.
+     */
     @Override
     public void onFavoriteButtonPressed(SerializableWifiNetwork serializableWifiNetwork) {
         Location location = new Location(new Location(LocationManager.GPS_PROVIDER));
@@ -280,7 +306,6 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         wifiNetwork.setMacAddress(serializableWifiNetwork.getMacAddress());
         wifiNetwork.setName(serializableWifiNetwork.getName());
         wifiNetwork.setFavorite(serializableWifiNetwork.getFavorite());
-
         viewModel.updateWifiNetwork(wifiNetwork);
     }
 }

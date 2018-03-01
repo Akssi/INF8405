@@ -3,6 +3,9 @@ package us.wifisearcher;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.maps.android.clustering.ClusterItem;
 
+/**
+ * Implementation of {@link ClusterItem}.
+ */
 public class WifiMarker implements ClusterItem {
     private final LatLng mPosition;
     private final String mTitle;

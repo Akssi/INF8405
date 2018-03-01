@@ -14,6 +14,9 @@ import java.util.List;
 
 import us.wifisearcher.persistence.database.WifiNetwork;
 
+/**
+ * RecyclerView adapter that displays networks.
+ */
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.RecyclerViewHolder> implements View.OnClickListener {
 
     private final WifiSearcherViewModel viewModel;

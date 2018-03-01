@@ -11,8 +11,10 @@ import javax.inject.Inject;
 
 import dagger.android.support.DaggerAppCompatActivity;
 
+/**
+ * Activity that shows the battery consumption of the app.
+ */
 public class StatusActivity extends DaggerAppCompatActivity {
-
 
     @Inject
     ViewModelProvider.Factory viewModelFactory;

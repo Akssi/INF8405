@@ -5,9 +5,8 @@ import android.support.annotation.NonNull;
 import java.io.Serializable;
 
 /**
- * Created by olivier on 2018-02-28.
+ * Class that wraps the information of a {@link WifiNetwork} so it can be serialized.
  */
-
 public class SerializableWifiNetwork implements Serializable {
 
     @NonNull
@@ -75,5 +74,4 @@ public class SerializableWifiNetwork implements Serializable {
     public void setFavorite(int favorite) {
         this.favorite = favorite;
     }
-
 }

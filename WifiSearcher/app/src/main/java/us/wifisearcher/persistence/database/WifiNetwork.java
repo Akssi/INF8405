@@ -6,6 +6,9 @@ import android.support.annotation.NonNull;
 
 import java.io.Serializable;
 
+/**
+ * Class that contains the information of a network.
+ */
 @Entity(primaryKeys = {"name"})
 public class WifiNetwork implements Serializable {
 

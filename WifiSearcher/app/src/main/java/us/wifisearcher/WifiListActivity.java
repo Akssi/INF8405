@@ -13,6 +13,9 @@ import javax.inject.Inject;
 
 import dagger.android.support.DaggerAppCompatActivity;
 
+/**
+ * Activity that displays a list of nearby networks.
+ */
 public class WifiListActivity extends DaggerAppCompatActivity {
 
     @Inject

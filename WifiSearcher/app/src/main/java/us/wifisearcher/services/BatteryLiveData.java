@@ -35,6 +35,11 @@ public class BatteryLiveData extends LiveData<Float> {
         }
     };
 
+    /**
+     * Construct a new instance of {@link BatteryLiveData}
+     *
+     * @param context The context.
+     */
     public BatteryLiveData(Context context) {
         this.context = context;
         if (startupBatteryLevel == -1) {
@@ -43,6 +48,10 @@ public class BatteryLiveData extends LiveData<Float> {
         context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
     }
 
+    /**
+     * Initialize the initial battery percentage.
+     * @param context The context.
+     */
     public static void InitializeBatteryStatus(Context context) {
 
         Intent batteryStatus = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));

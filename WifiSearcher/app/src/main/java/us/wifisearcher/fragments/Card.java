@@ -164,10 +164,24 @@ public class Card extends DialogFragment {
      * activity.
      */
     public interface OnCardFragmentInteractionListener {
+
+        /**
+         * This function is called when the user want to share a network.
+         *
+         * @param wifiNetwork The network to share.
+         */
         void onShareButtonPressed(SerializableWifiNetwork wifiNetwork);
 
+        /**
+         * This function is called when the user want to navigate to a particular network.
+         * @param wifiNetwork The network to navigate to.
+         */
         void onNavigationButtonPressed(SerializableWifiNetwork wifiNetwork);
 
+        /**
+         * This function is called when the user want to set a network as a favorite.
+         * @param wifiNetwork The network to be set as favorite.
+         */
         void onFavoriteButtonPressed(SerializableWifiNetwork wifiNetwork);
     }
 }
