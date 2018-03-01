@@ -6,7 +6,7 @@ import android.support.annotation.NonNull;
 
 import java.io.Serializable;
 
-@Entity(primaryKeys = {"name", "macAddress"})
+@Entity(primaryKeys = {"name"})
 public class WifiNetwork implements Serializable {
 
     @NonNull
