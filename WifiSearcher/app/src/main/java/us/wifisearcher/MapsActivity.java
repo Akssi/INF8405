@@ -75,12 +75,21 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         return dist;
     }
 
+    /**
+     * Allows for camera to follow user position
+     *
+     * @param location
+     */
     private void updateCurrentLocationOnMap(Location location) {
         currentCoordinates = new LatLng(location.getLatitude(), location.getLongitude());
         mMap.setMyLocationEnabled(true);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentCoordinates, 15));
     }
 
+    /**
+     * Adds markers and clusters to the map given a list of known network
+     * @param wifiNetworks known network
+     */
     private void displayNetworksOnMap(List<WifiNetwork> wifiNetworks) {
         clusterManager.clearItems();
         for (WifiNetwork wifiNetwork : wifiNetworks) {
@@ -122,6 +131,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         // Get view model
         viewModel = ViewModelProviders.of(this, viewModelFactory).get(WifiSearcherViewModel.class);
 
+        // Runs only once at startup
         if (isStartupLaunch) {
             BatteryLiveData.InitializeBatteryStatus(getApplicationContext());
             isStartupLaunch = false;
@@ -215,6 +225,10 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         return true;
     }
 
+    /**
+     * Opens a card containing the list of wifi on the marker/cluster selected
+     * @param wifiNetworks
+     */
     private void showNetworksOnCard(List<WifiNetwork> wifiNetworks) {
         if (wifiNetworks.size() > 1) {
 

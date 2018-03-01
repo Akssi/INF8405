@@ -5,6 +5,9 @@ import android.location.Location;
 
 import java.util.Locale;
 
+/**
+ * Allows for conversion of un-serializable type to save in DB
+ */
 public class LocationTypeConverter {
 
     @TypeConverter

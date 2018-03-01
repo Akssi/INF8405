@@ -97,11 +97,20 @@ public class WifiLiveData extends LiveData<List<WifiNetwork>> {
         this.context.unregisterReceiver(broadcastReceiver);
     }
 
+    /**
+     * Receive results of the WIFI scan
+     *
+     * @param context
+     * @param intent
+     */
     private void onScanResults(Context context, Intent intent) {
         List<ScanResult> discoveredNetworks = wifiManager.getScanResults();
+
         if (discoveredNetworks.isEmpty()) {
             setValue(null);
-        } else {
+        }
+        // Parse scan results to create a list of WifiNetwork objects
+        else {
             List<WifiNetwork> networks = new ArrayList<>();
             for (ScanResult scanResult : discoveredNetworks) {
                 WifiNetwork wifiNetwork = new WifiNetwork();

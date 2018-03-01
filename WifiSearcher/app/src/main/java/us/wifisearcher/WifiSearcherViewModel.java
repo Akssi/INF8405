@@ -45,15 +45,20 @@ public class WifiSearcherViewModel extends AndroidViewModel {
      * Initializes the observers for the {@link WifiLiveData} and the {@link LocationLiveData}
      */
     public void initializeCurrentLocationWifiNetworkLiveData() {
+        // Prevent re-initialization of observers
         if (isInitialized) {
             return;
         }
         isInitialized = true;
         wifiLiveData.executeScan();
+
+        // Triggers a scan when location changes
         this.locationLiveData.observeForever(location -> {
             this.currentLocation = location;
             wifiLiveData.executeScan();
         });
+
+        // Save the networks found after a scan into the database
         this.wifiLiveData.observeForever(scanResults -> {
             if (this.currentLocation != null) {
                 for (WifiNetwork wifiNetwork : scanResults) {

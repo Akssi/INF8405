@@ -24,6 +24,11 @@ public class WifiListActivity extends DaggerAppCompatActivity {
     private RecyclerViewAdapter recyclerViewAdapter;
     private RecyclerView recyclerView;
 
+    /**
+     * Setup the recycler view adapter and the few attributes of this class
+     *
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

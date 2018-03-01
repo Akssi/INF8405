@@ -9,7 +9,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import us.wifisearcher.persistence.database.WifiNetwork;
@@ -20,7 +19,6 @@ import us.wifisearcher.persistence.database.WifiNetwork;
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.RecyclerViewHolder> implements View.OnClickListener {
 
     private final WifiSearcherViewModel viewModel;
-    private HashMap<String, ArrayList<String>> uniqueSSIDMacAddressesMap = new HashMap<>();
     private List<WifiNetwork> wifiNetworkList = new ArrayList<>();
     private int expandedPosition = -1;
     private String wifi_mac_address;
@@ -39,6 +37,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
                 .inflate(R.layout.wifi_list_item, parent, false);
         RecyclerViewHolder holder = new RecyclerViewHolder(v);
 
+        // Handles expanding card
         holder.itemView.setOnClickListener(RecyclerViewAdapter.this);
         holder.itemView.setTag(holder);
         return holder;
@@ -62,15 +61,21 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         }
     }
 
+    /**
+     * Initialize and setup the UI of a list item
+     *
+     * @param holder
+     * @param position
+     */
     @Override
     public void onBindViewHolder(final RecyclerViewHolder holder, int position) {
         WifiNetwork wifiNetwork = wifiNetworkList.get(position);
 
+        // Setup favorite switch on the card
         holder.favoriteToggle.setOnClickListener((View v) -> {
             wifiNetwork.setFavorite(wifiNetwork.getFavorite() == 1 ? 0 : 1);
             viewModel.updateWifiNetwork(wifiNetwork);
 
-            //ImageView button = v.findViewById(R.id.favoriteToggle);
             if (wifiNetwork.getFavorite() == 1) {
                 holder.favoriteToggle.setImageResource(R.drawable.ic_star_black_32dp);
             } else {
@@ -78,6 +83,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
             }
         });
 
+        // Sets the image for favorite indication
         if (wifiNetwork.getFavorite() == 1) {
             holder.favoriteToggle.setImageResource(R.drawable.ic_star_black_32dp);
         } else {
@@ -123,6 +129,10 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         return wifiNetworkList.size();
     }
 
+    /**
+     * Updates the displayed list of wifi with the new list
+     * @param newWifiNetworkList
+     */
     public void addItems(List<WifiNetwork> newWifiNetworkList) {
         if (!newWifiNetworkList.isEmpty()) {
             wifiNetworkList = new ArrayList<>();
