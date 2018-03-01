@@ -67,6 +67,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
             wifiNetwork.setFavorite(wifiNetwork.getFavorite() == 1 ? 0 : 1);
             viewModel.updateWifiNetwork(wifiNetwork);
 
+            //ImageView button = v.findViewById(R.id.favoriteToggle);
             if (wifiNetwork.getFavorite() == 1) {
                 holder.favoriteToggle.setImageResource(R.drawable.ic_star_black_32dp);
             } else {

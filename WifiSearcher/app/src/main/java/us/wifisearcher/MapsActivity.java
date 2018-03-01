@@ -213,7 +213,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
                 }
 
                 // Add lock character
-                if (wifiNetwork.getEncryption().equals(OPEN)) {
+                if (wifiNetwork.getKeyType().equals(OPEN)) {
                     wifiNames[i] += UNLOCKED_CHAR;
                 } else {
                     wifiNames[i] += LOCKED_CHAR;
@@ -248,7 +248,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     public void onShareButtonPressed(SerializableWifiNetwork wifiNetwork) {
 
         Resources res = getResources();
-        String textToSend = res.getString(R.string.wifi_sharing_text) + wifiNetwork.getName() + "\n" + " (dummy location)";
+        String textToSend = res.getString(R.string.wifi_sharing_text) + wifiNetwork.getName() + "\n" + "Position : " + wifiNetwork.getLatitude() + "," + wifiNetwork.getLongitude();
         Intent sendIntent = new Intent();
         sendIntent.setAction(Intent.ACTION_SEND);
         sendIntent.putExtra(Intent.EXTRA_TEXT, textToSend);

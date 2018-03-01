@@ -25,6 +25,7 @@ import us.wifisearcher.persistence.database.SerializableWifiNetwork;
 public class Card extends DialogFragment {
     private static final String LOCKED_CHAR = "\uD83D\uDD12";
     private static final String UNLOCKED_CHAR = "\uD83D\uDD13";
+    private static final String OPEN = "Open";
 
     private static final String ARG_WIFI_NETWORK = "wifiNetwork";
 
@@ -78,7 +79,7 @@ public class Card extends DialogFragment {
         encryption.setText(mWifiNetwork.getEncryption());
 
         TextView passwordLockState = view.findViewById(R.id.card_wifi_password_lock_state);
-        passwordLockState.setText((mWifiNetwork.getEncryption().equals("OPEN")) ? UNLOCKED_CHAR : LOCKED_CHAR);
+        passwordLockState.setText((mWifiNetwork.getKeyType().equals(OPEN)) ? UNLOCKED_CHAR : LOCKED_CHAR);
 
         ImageView rssi = view.findViewById(R.id.card_wifi_rssi);
 
