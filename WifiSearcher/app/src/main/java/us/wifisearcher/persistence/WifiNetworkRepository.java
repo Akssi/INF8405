@@ -15,6 +15,8 @@ import javax.inject.Singleton;
 import us.wifisearcher.persistence.database.WifiNetwork;
 import us.wifisearcher.persistence.database.WifiNetworkDao;
 
+import static java.lang.Math.max;
+
 @Singleton
 public class WifiNetworkRepository {
     private static final int SURROUNDING_WIFI_RANGE = 100;
@@ -36,10 +38,14 @@ public class WifiNetworkRepository {
         executor.execute(() -> {
             long id = wifiNetworkDao.save(wifiNetwork);
             if (id == -1) {
+                WifiNetwork currentWifi = wifiNetworkDao.getNetworkByName(wifiNetwork.getName());
                 // Favorite state unchanged. Take value currently in DB
                 if (wifiNetwork.getFavorite() == -1) {
-                    WifiNetwork currentWifi = wifiNetworkDao.getNetworkByName(wifiNetwork.getName());
                     wifiNetwork.setFavorite(currentWifi.getFavorite());
+                }
+                // If network are close by save max signal strength
+                if (wifiNetwork.getLocation().distanceTo(currentWifi.getLocation()) < SURROUNDING_WIFI_RANGE) {
+                    wifiNetwork.setSignalStrength(max(wifiNetwork.getSignalStrength(), currentWifi.getSignalStrength()));
                 }
                 wifiNetworkDao.update(wifiNetwork);
             }

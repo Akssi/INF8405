@@ -83,7 +83,6 @@ public class WifiLiveData extends LiveData<List<WifiNetwork>> {
     protected void onActive() {
         super.onActive();
         this.context.registerReceiver(this.broadcastReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
-//        executeScan();
     }
 
     @Override

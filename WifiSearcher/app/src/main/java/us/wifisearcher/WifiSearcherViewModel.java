@@ -26,7 +26,7 @@ public class WifiSearcherViewModel extends AndroidViewModel {
     private LocationLiveData locationLiveData;
     private Location currentLocation;
     private List<WifiNetwork> wifiNetworks;
-    private boolean isInitialized;
+    private boolean isInitialized = false;
 
     @Inject
     public WifiSearcherViewModel(@NonNull Application application, @NonNull WifiNetworkRepository wifiNetworkRepository, @NonNull LocationLiveData locationLiveData, @NonNull WifiLiveData wifiLiveData, @NonNull BatteryLiveData batteryLiveData) {
@@ -39,10 +39,11 @@ public class WifiSearcherViewModel extends AndroidViewModel {
     }
 
     public void initializeCurrentLocationWifiNetworkLiveData() {
-        if (!isInitialized) {
+        if (isInitialized) {
             return;
         }
         isInitialized = true;
+        wifiLiveData.executeScan();
         this.locationLiveData.observeForever(location -> {
             this.currentLocation = location;
             wifiLiveData.executeScan();
