@@ -36,6 +36,7 @@ import javax.inject.Inject;
 
 import dagger.android.support.DaggerAppCompatActivity;
 import us.wifisearcher.fragments.Card;
+import us.wifisearcher.persistence.database.SerializableWifiNetwork;
 import us.wifisearcher.persistence.database.WifiNetwork;
 import us.wifisearcher.services.BatteryLiveData;
 
@@ -153,23 +154,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         } else {
             initializeActivityObservers();
         }
-
-        // Set a listener for marker click.
-        //mMap.setOnMarkerClickListener(this);
-
     }
-
-//    @Override
-//    public boolean onMarkerClick(Marker marker) {
-//
-////        this.markerLocation.setLatitude(marker.getPosition().latitude);
-////        this.markerLocation.setLongitude(marker.getPosition().longitude);
-////
-////        mWifiNetworks = viewModel.getWifiNetworksSurroundingLocation(this.markerLocation);
-////        mWifiNetworks.observe(this, this.wifiCardObserver);
-//
-//        return true;
-//    }
 
     @Override
     public boolean onClusterClick(Cluster<WifiMarker> cluster) {
@@ -232,7 +217,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
             // add a list
             builder.setItems(wifiNames, (DialogInterface dialog, int index) -> {
                 dialog.cancel();
-                Card cardFragment = Card.newInstance(wifiNetworks.get(index));
+                Card cardFragment = Card.newInstance(new SerializableWifiNetwork(wifiNetworks.get(index)));
                 cardFragment.show(getFragmentManager(), "Card fragment");
             });
 
@@ -240,7 +225,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
             AlertDialog dialog = builder.create();
             dialog.show();
         } else if (!wifiNetworks.isEmpty()) {
-            Card cardFragment = Card.newInstance(wifiNetworks.get(0));
+            Card cardFragment = Card.newInstance(new SerializableWifiNetwork(wifiNetworks.get(0)));
             cardFragment.show(getFragmentManager(), "Card fragment");
         } else {
             Toast.makeText(this, " No Wifi networks were found", Toast.LENGTH_SHORT).show();
@@ -249,7 +234,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     }
 
     @Override
-    public void onShareButtonPressed(WifiNetwork wifiNetwork) {
+    public void onShareButtonPressed(SerializableWifiNetwork wifiNetwork) {
 
         Resources res = getResources();
         String textToSend = res.getString(R.string.wifi_sharing_text) + wifiNetwork.getName() + "\n" + " (dummy location)";
@@ -262,10 +247,9 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     }
 
     @Override
-    public void onNavigationButtonPressed(WifiNetwork wifiNetwork) {
-        Location location = wifiNetwork.getLocation();
+    public void onNavigationButtonPressed(SerializableWifiNetwork wifiNetwork) {
 
-        Uri gmmIntentUri = Uri.parse("google.navigation:q=" + location.getLatitude() + "," + location.getLongitude());
+        Uri gmmIntentUri = Uri.parse("google.navigation:q=" + wifiNetwork.getLatitude() + "," + wifiNetwork.getLongitude());
         Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
         mapIntent.setPackage("com.google.android.apps.maps");
         startActivity(mapIntent);
