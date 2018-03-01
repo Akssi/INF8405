@@ -8,12 +8,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import us.wifisearcher.persistence.database.WifiNetwork;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+
+import us.wifisearcher.persistence.database.WifiNetwork;
 
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.RecyclerViewHolder> implements View.OnClickListener {
 
@@ -68,11 +69,11 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
             wifiNetwork.setFavorite(wifiNetwork.getFavorite() == 1 ? 0 : 1);
             viewModel.updateWifiNetwork(wifiNetwork);
 
-            ImageView button = v.findViewById(R.id.favoriteToggle);
+            //ImageView button = v.findViewById(R.id.favoriteToggle);
             if (wifiNetwork.getFavorite() == 1) {
-                button.setImageResource(R.drawable.ic_star_black_32dp);
+                holder.favoriteToggle.setImageResource(R.drawable.ic_star_black_32dp);
             } else {
-                button.setImageResource(R.drawable.ic_star_border_black_32dp);
+                holder.favoriteToggle.setImageResource(R.drawable.ic_star_border_black_32dp);
             }
         });
 
@@ -148,7 +149,8 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
                             && Objects.equals(newWifi.getMacAddress(), oldWifi.getMacAddress())
                             && Objects.equals(newWifi.getPasswordLockState(), oldWifi.getPasswordLockState())
                             && Objects.equals(newWifi.getSignalStrength(), oldWifi.getSignalStrength())
-                            && Objects.equals(newWifi.getKeyType(), oldWifi.getKeyType());
+                            && Objects.equals(newWifi.getKeyType(), oldWifi.getKeyType())
+                            && Objects.equals(newWifi.getFavorite(), oldWifi.getFavorite());
                 }
             });
             wifiNetworkList = newWifiNetworkList;
