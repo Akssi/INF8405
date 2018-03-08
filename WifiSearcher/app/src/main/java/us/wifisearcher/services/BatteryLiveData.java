@@ -8,7 +8,9 @@ import android.content.IntentFilter;
 import android.os.BatteryManager;
 import android.util.Log;
 
-
+/**
+ * Class to provide battery consumption
+ */
 public class BatteryLiveData extends LiveData<Float> {
     private static float startupBatteryLevel = -1;
     private final Context context;

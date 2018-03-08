@@ -7,14 +7,16 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
+import us.wifisearcher.persistence.database.WifiNetwork;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import us.wifisearcher.persistence.database.WifiNetwork;
-
 import static android.net.wifi.WifiManager.calculateSignalLevel;
 
+/**
+ * Class to provide Wifi Scan Results
+ */
 public class WifiLiveData extends LiveData<List<WifiNetwork>> {
     // Constants used for different security types
     private static final String WPA2 = "WPA2";

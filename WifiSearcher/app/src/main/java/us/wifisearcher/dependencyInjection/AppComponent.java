@@ -9,6 +9,9 @@ import us.wifisearcher.WifiSearcherApplication;
 
 import javax.inject.Singleton;
 
+/**
+ * Class that builds all the apps Dependencies
+ */
 @Singleton
 @Component(modules = {MainActivityModule.class, AndroidInjectionModule.class, AppModule.class, AndroidSupportInjectionModule.class})
 public interface AppComponent {

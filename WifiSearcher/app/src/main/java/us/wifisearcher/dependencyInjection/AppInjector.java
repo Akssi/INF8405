@@ -11,6 +11,9 @@ import dagger.android.support.AndroidSupportInjection;
 import dagger.android.support.HasSupportFragmentInjector;
 import us.wifisearcher.WifiSearcherApplication;
 
+/**
+ * Class that injects the proper dependencies for activities and fragments
+ */
 public class AppInjector {
 
     private AppInjector() {
