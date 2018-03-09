@@ -4,9 +4,9 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.renderscript.Float2;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -109,7 +109,7 @@ public class Game extends Activity implements
     };
     // Request code used to invoke sign in user interactions.
     private static final int RC_SIGN_IN = 9001;
-    protected int playerColor = -1;
+    protected int playerColor = Color.CYAN;
     // Room ID where the currently active game is taking place; null if we're
     // not playing.
     String mRoomId = null;
@@ -134,9 +134,10 @@ public class Game extends Activity implements
     // Score of other participants. We update this as we receive their scores
     // from the network.
     Map<String, Integer> mParticipantScore = new HashMap<>();
-    Map<String, Enemy> mParticipantPlayers = new HashMap<>();
+    Map<String, Enemy> mParticipantEnemy = new HashMap<>();
     // Participants who sent us their final score.
     Set<String> mFinishedParticipants = new HashSet<>();
+    int mCurScreen = -1;
     // Called when we receive a real-time message from the network.
     // Messages in our game are made up of 2 bytes: the first one is 'F' or 'U'
     // indicating
@@ -175,10 +176,10 @@ public class Game extends Activity implements
                 }
             } else if (buf[0] == 'P') {
                 // Position update
-                if (mParticipantPlayers.containsKey(sender)) {
-                    byte[] positionX = Arrays.copyOfRange(buf, 1, 4);
-                    byte[] positionY = Arrays.copyOfRange(buf, 5, 8);
-                    mParticipantPlayers.get(sender).setEnemyPosition(new Point(parseIntFromByteArray(positionX), parseIntFromByteArray(positionY)));
+                if (mParticipantEnemy.containsKey(sender)) {
+                    byte[] positionX = Arrays.copyOfRange(buf, 1, 5);
+                    byte[] positionY = Arrays.copyOfRange(buf, 5, 9);
+                    mParticipantEnemy.get(sender).setEnemyPosition(new Float2(parseFloatFromByteArray(positionX), parseFloatFromByteArray(positionY)));
                 }
                 StringBuilder sb = new StringBuilder();
             }
@@ -187,12 +188,12 @@ public class Game extends Activity implements
                 for (int i = 0; i < mParticipants.size(); i++) {
                     Participant participant = mParticipants.get(i);
                     if (participant.getParticipantId().equals(mMyId)) {
-                        playerColor = parseIntFromByteArray(Arrays.copyOfRange(buf, 4 * i + 1, 4 * i + 4));
+                        playerColor = parseIntFromByteArray(Arrays.copyOfRange(buf, 4 * i + 1, 4 * i + 5));
+                    } else {
+                        Log.v("ZSX", "Creating Enemy at initialization");
+                        mParticipantEnemy.put(participant.getParticipantId(), new Enemy(new Rect(0, 100, 100, 0), parseIntFromByteArray(Arrays.copyOfRange(buf, 4 * i + 1, 4 * i + 5)), new Float2(0.5f, 0.5f)));
                     }
-                    /// USE RELATIVE POSITION IN FLOAT
-                    mParticipantPlayers.put(participant.getParticipantId(), new Enemy(new Rect(0, 100, 100, 0), parseIntFromByteArray(Arrays.copyOfRange(buf, 4 * i + 1, 4 * i + 4)), new Point(700, 1250), new Point(2, 2)));
                 }
-                StringBuilder sb = new StringBuilder();
             }
             // Start Game
             else if (buf[0] == 'S') {
@@ -204,7 +205,6 @@ public class Game extends Activity implements
             }
         }
     };
-    int mCurScreen = -1;
     private boolean gameReady;
     // Client used to sign in with Google APIs
     private GoogleSignInClient mGoogleSignInClient = null;
@@ -388,6 +388,21 @@ public class Game extends Activity implements
             Log.e("ZSX", sb.toString());
         }
         return ByteBuffer.wrap(byteBarray).order(ByteOrder.LITTLE_ENDIAN).getInt();
+    }
+
+    public static byte[] floatToByteArray(float value) {
+        return ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putFloat(value).array();
+    }
+
+    public static float parseFloatFromByteArray(byte[] byteBarray) {
+        if (byteBarray.length != 4) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Error converting byte array of size ");
+            sb.append(byteBarray.length);
+            sb.append(" to float");
+            Log.e("ZSX", sb.toString());
+        }
+        return ByteBuffer.wrap(byteBarray).order(ByteOrder.LITTLE_ENDIAN).getFloat();
     }
 
     @Override
@@ -969,13 +984,16 @@ public class Game extends Activity implements
         mSecondsLeft = GAME_DURATION;
         mScore = 0;
         mParticipantScore.clear();
-        mParticipantPlayers.clear();
+        mParticipantEnemy.clear();
         mFinishedParticipants.clear();
     }
 
     void initializeGame(boolean multiplayer) {
-        if (!multiplayer) {
-            initializeGame(multiplayer);
+        Log.i("ZSX", "INIT GAME");
+
+        mMultiplayer = multiplayer;
+        if (!mMultiplayer) {
+            initializeGame(mMultiplayer);
         } else {
             Collections.sort(mParticipants, new Comparator<Participant>() {
                 @Override
@@ -985,9 +1003,10 @@ public class Game extends Activity implements
             });
             String hostId = mParticipants.get(0).getParticipantId();
             if (mMyId.equals(hostId)) {
+                Log.v("ZSX", "Broadcasting Colors");
                 broadcastPlayersColor();
                 broadcastGameStart();
-                startGame(true);
+                startGame(mMultiplayer);
             }
         }
     }
@@ -1036,15 +1055,12 @@ public class Game extends Activity implements
 
         //set to full screen
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        if (multiplayer) {
 
-        }
-
+        switchToScreen(R.id.screen_game);
         setContentView(new GamePanel(this));
 //        updateScoreDisplay();
 //        broadcastScore(false);
 
-//        switchToScreen(R.id.screen_game);
 
 //        findViewById(R.id.button_click_me).setVisibility(View.VISIBLE);
 //
@@ -1065,6 +1081,8 @@ public class Game extends Activity implements
     private void broadcastPlayersColor() {
         if (!mMultiplayer) {
             // playing single-player mode
+
+            Log.i("ZSX", " No color broadcast in single player");
             return;
         }
         // Host color
@@ -1072,7 +1090,7 @@ public class Game extends Activity implements
         Random rand = new Random();
         randomColor[0] = rand.nextFloat() * 360;
         randomColor[1] = 0.9f;
-        randomColor[2] = clamp(rand.nextFloat(), 0.4f, 0.8f);
+        randomColor[2] = clamp(rand.nextFloat(), 0.65f, 0.95f);
         int color = Color.HSVToColor(randomColor);
         playerColor = color;
 
@@ -1080,12 +1098,12 @@ public class Game extends Activity implements
         mMsgBuf[0] = (byte) 'I';
 
         int nbParticipant = mParticipants.size();
+        byte[] colorByteArray;
         for (int i = 0; i < nbParticipant; i++) {
             Participant participant = mParticipants.get(i);
-            // If host use playerColor
-            if (participant.getParticipantId() == mMyId) {
-                // Fill buffer with host color
-                byte[] colorByteArray = intToByteArray(playerColor);
+            if (participant.getParticipantId().equals(mMyId)) {
+                // Fill buffer with host color for client's message
+                colorByteArray = intToByteArray(playerColor);
                 mMsgBuf[4 * i + 1] = colorByteArray[0];
                 mMsgBuf[4 * i + 2] = colorByteArray[1];
                 mMsgBuf[4 * i + 3] = colorByteArray[2];
@@ -1094,14 +1112,14 @@ public class Game extends Activity implements
                 // Different color for all players
                 float[] hsv = new float[3];
                 Color.colorToHSV(color, hsv);
-                hsv[0] = (hsv[0] + 0.2f) * 360 % 360;
+                hsv[0] = (hsv[0] + 0.25f) * 360 % 360;
                 color = Color.HSVToColor(hsv);
 
-                // Create Enemy
-                mParticipantPlayers.put(participant.getParticipantId(), new Enemy(new Rect(0, 100, 100, 0), color, new Point(1, 1), new Point(2, 2)));
+                // Create Enemy for host
+                mParticipantEnemy.put(participant.getParticipantId(), new Enemy(new Rect(0, 100, 100, 0), color, new Float2(0.5f, 0.5f)));
 
-                // Fill buffer with player's color
-                byte[] colorByteArray = intToByteArray(color);
+                // Fill buffer with player's color for client's message
+                colorByteArray = intToByteArray(color);
                 mMsgBuf[4 * i + 1] = colorByteArray[0];
                 mMsgBuf[4 * i + 2] = colorByteArray[1];
                 mMsgBuf[4 * i + 3] = colorByteArray[2];
@@ -1115,7 +1133,7 @@ public class Game extends Activity implements
                 continue;
             }
             // final score notification must be sent via reliable message
-            mRealTimeMultiplayerClient.sendReliableMessage(Arrays.copyOfRange(mMsgBuf, 0, nbParticipant * 4 + 1),
+            mRealTimeMultiplayerClient.sendReliableMessage(Arrays.copyOfRange(mMsgBuf, 0, nbParticipant * 4 + 2),
                     mRoomId, participant.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
                         @Override
                         public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
@@ -1172,7 +1190,7 @@ public class Game extends Activity implements
 //        return ByteBuffer.wrap(byteBarray).order(ByteOrder.LITTLE_ENDIAN).getChar();
 //    }
 
-    void broadcastPosition(Player player) {
+    public void broadcastPosition(Player player) {
         if (!mMultiplayer) {
             // playing single-player mode
             return;
@@ -1181,12 +1199,12 @@ public class Game extends Activity implements
         // First byte in message indicates position update
         mMsgBuf[0] = (byte) 'P';
         // Then we send int pos as 4 bytes
-        byte[] playerPosX = intToByteArray(player.getPlayerPosition().x);
+        byte[] playerPosX = floatToByteArray(player.getPlayerPosition().x);
         mMsgBuf[1] = playerPosX[0];
         mMsgBuf[2] = playerPosX[1];
         mMsgBuf[3] = playerPosX[2];
         mMsgBuf[4] = playerPosX[3];
-        byte[] playerPosY = intToByteArray(player.getPlayerPosition().y);
+        byte[] playerPosY = floatToByteArray(player.getPlayerPosition().y);
         mMsgBuf[5] = playerPosY[0];
         mMsgBuf[6] = playerPosY[1];
         mMsgBuf[7] = playerPosY[2];
@@ -1201,7 +1219,7 @@ public class Game extends Activity implements
                 continue;
             }
             // it's an interim score notification, so we can use unreliable
-            mRealTimeMultiplayerClient.sendUnreliableMessage(Arrays.copyOfRange(mMsgBuf, 0, 8), mRoomId,
+            mRealTimeMultiplayerClient.sendUnreliableMessage(Arrays.copyOfRange(mMsgBuf, 0, 9), mRoomId,
                     p.getParticipantId());
         }
     }
@@ -1254,6 +1272,13 @@ public class Game extends Activity implements
     }
 
     void switchToScreen(int screenId) {
+        if (mCurScreen == R.id.screen_game) {
+            setContentView(R.layout.activity_main);
+            // set up a click listener for everything we care about
+            for (int id : CLICKABLES) {
+                findViewById(id).setOnClickListener(this);
+            }
+        }
         // make the requested screen visible; hide all others.
         for (int id : SCREENS) {
             findViewById(id).setVisibility(screenId == id ? View.VISIBLE : View.GONE);

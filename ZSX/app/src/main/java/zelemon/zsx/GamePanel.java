@@ -1,12 +1,13 @@
 package zelemon.zsx;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.renderscript.Float2;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -18,6 +19,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     private Player player;
     private Game game;
 
+    @SuppressLint("ClickableViewAccessibility")
     public GamePanel(Context context) {
         super(context);
         game = (Game) context;
@@ -27,11 +29,15 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
         getHolder().addCallback(this);
 
         thread = new MainThread(getHolder(), this);
-        this.player = new Player(new Rect(0, 100, 100, 0), game.playerColor, new Point(this.getWidth() / 2, this.getHeight() / 2), new Point(getWidth(), getHeight()));
+        this.player = new Player(new Rect(0, 100, 100, 0), game.playerColor, new Float2(0.5f, 0.5f));
         this.setOnTouchListener(new OnSwipeTouchListener(context) {
             @Override
             public void onSwipeLeft() {
                 System.out.println("Swipe left in game panel");
+                StringBuilder sb = new StringBuilder();
+                sb.append("Enemy number: ");
+                sb.append(game.mParticipantEnemy.size());
+                Log.v("ZSX", sb.toString());
                 player.updateDirection(new Point(-1, 0));
             }
 
@@ -61,7 +67,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         player.updateScreenDim(new Point(width, height));
-        for (Enemy e : game.mParticipantPlayers.values()) {
+        for (Enemy e : game.mParticipantEnemy.values()) {
             e.updateScreenDim(new Point(width, height));
         }
         StringBuilder sb = new StringBuilder();
@@ -96,14 +102,11 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
         thread.start();
     }
 
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-
-        return super.onTouchEvent(event);
-    }
-
     public void update() {
         player.update();
+        for (Enemy enemy : game.mParticipantEnemy.values()) {
+            enemy.update();
+        }
         game.broadcastPosition(player);
     }
 
@@ -111,5 +114,8 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
         super.draw(canvas);
         canvas.drawColor(Color.WHITE);
         player.draw(canvas);
+        for (Enemy enemy : game.mParticipantEnemy.values()) {
+            enemy.draw(canvas);
+        }
     }
 }

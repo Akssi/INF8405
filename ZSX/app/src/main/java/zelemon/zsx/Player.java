@@ -4,6 +4,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.renderscript.Float2;
 
 import static android.support.v4.math.MathUtils.clamp;
 
@@ -15,19 +16,18 @@ public class Player implements GameObject {
 
     private Rect playerSprite;
     private int playerColor;
-    private Point playerPosition;
+    private Float2 playerPosition;
     private Point direction = new Point(0, -1);
-    private int speed = 1;
+    private float speed = 0.005f;
     private Point screenSize = new Point(1440, 2560);
 
-    public Player(Rect playerSprite, int playerColor, Point playerPosition, Point screenSize) {
+    public Player(Rect playerSprite, int playerColor, Float2 playerPosition) {
         this.playerSprite = playerSprite;
         this.playerColor = playerColor;
         this.playerPosition = playerPosition;
-        this.screenSize = screenSize;
     }
 
-    public Point getPlayerPosition() {
+    public Float2 getPlayerPosition() {
         return playerPosition;
     }
 
@@ -42,17 +42,15 @@ public class Player implements GameObject {
     public void update() {
         playerPosition.x += direction.x * speed;
         playerPosition.y += direction.y * speed;
-        Point newPlayerPosition = new Point(clamp(playerPosition.x, playerSprite.width() / 2 + 1, screenSize.x - playerSprite.width() / 2 - 1),
-                clamp(playerPosition.y, playerSprite.height() / 2 + 1, screenSize.y - playerSprite.height() / 2 - 1));
+        Float2 newPlayerPosition = new Float2(clamp(playerPosition.x, (playerSprite.width() / 2 + 1) / (float) screenSize.x, (screenSize.x - playerSprite.width() / 2 - 1) / (float) screenSize.x),
+                clamp(playerPosition.y, (playerSprite.height() / 2 + 1) / (float) screenSize.y, (screenSize.y - playerSprite.height() / 2 - 1) / (float) screenSize.y));
         if (newPlayerPosition != playerPosition) {
-
-//            int xDelta = newPlayerPosition.x-playerPosition.x;
-//            int yDelta = newPlayerPosition.y-playerPosition.y;
-//            if(playerPosition.x < )
-//            Point stuckDelta = new Point(xDelta, yDelta);
             playerPosition = newPlayerPosition;
         }
-        playerSprite = new Rect(playerPosition.x - playerSprite.width() / 2, playerPosition.y + playerSprite.height() / 2, playerPosition.x + playerSprite.width() / 2, playerPosition.y - playerSprite.height() / 2);
+        playerSprite = new Rect((int) (playerPosition.x * screenSize.x) - playerSprite.width() / 2,
+                (int) (playerPosition.y * screenSize.y) + playerSprite.height() / 2,
+                (int) (playerPosition.x * screenSize.x) + playerSprite.width() / 2,
+                (int) (playerPosition.y * screenSize.y) - playerSprite.height() / 2);
     }
 
     public void updateDirection(Point direction) {
