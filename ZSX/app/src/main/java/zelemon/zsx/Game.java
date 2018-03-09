@@ -1,28 +1,17 @@
-/* Copyright (C) 2013 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package zelemon.zsx;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.Point;
+import android.graphics.Rect;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
@@ -38,7 +27,6 @@ import com.google.android.gms.games.GamesCallbackStatusCodes;
 import com.google.android.gms.games.GamesClient;
 import com.google.android.gms.games.GamesClientStatusCodes;
 import com.google.android.gms.games.InvitationsClient;
-import com.google.android.gms.games.Player;
 import com.google.android.gms.games.PlayersClient;
 import com.google.android.gms.games.RealTimeMultiplayerClient;
 import com.google.android.gms.games.multiplayer.Invitation;
@@ -56,12 +44,21 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
+
+import static android.support.v4.math.MathUtils.clamp;
+
 
 /**
  * Button Clicker 2000. A minimalistic game showing the multiplayer features of
@@ -82,20 +79,20 @@ import java.util.Set;
  *
  * @author Bruno Oliveira (btco), 2013-04-26
  */
-public class MainActivity extends Activity implements
+public class Game extends Activity implements
         View.OnClickListener {
 
-    /*
-     * API INTEGRATION SECTION. This section contains the code that integrates
-     * the game with the Google Play game services API.
-     */
 
     final static String TAG = "ZSX";
-
     // Request codes for the UIs that we show with startActivityForResult:
     final static int RC_SELECT_PLAYERS = 10000;
     final static int RC_INVITATION_INBOX = 10001;
     final static int RC_WAITING_ROOM = 10002;
+
+    /*
+    * API INTEGRATION SECTION. This section contains the code that integrates
+    * the game with the Google Play game services API.
+    */
     final static int GAME_DURATION = 20; // game duration, seconds.
     // This array lists everything that's clickable, so we can install click
     // event handlers.
@@ -112,28 +109,23 @@ public class MainActivity extends Activity implements
     };
     // Request code used to invoke sign in user interactions.
     private static final int RC_SIGN_IN = 9001;
+    protected int playerColor = -1;
     // Room ID where the currently active game is taking place; null if we're
     // not playing.
     String mRoomId = null;
-
     // Holds the configuration of the current room.
     RoomConfig mRoomConfig;
-
     // Are we playing in multiplayer mode?
     boolean mMultiplayer = false;
-
     // The participants in the currently active game
     ArrayList<Participant> mParticipants = null;
-
     // My participant ID in the currently active game
     String mMyId = null;
-
     // If non-null, this is the id of the invitation we received via the
     // invitation listener
     String mIncomingInvitationId = null;
-
     // Message buffer for sending messages
-    byte[] mMsgBuf = new byte[2];
+    byte[] mMsgBuf = new byte[100];
     // The currently signed in account, used to check the account has changed outside of this activity when resuming.
     GoogleSignInAccount mSignedInAccount = null;
     // Current state of the game:
@@ -142,6 +134,7 @@ public class MainActivity extends Activity implements
     // Score of other participants. We update this as we receive their scores
     // from the network.
     Map<String, Integer> mParticipantScore = new HashMap<>();
+    Map<String, Enemy> mParticipantPlayers = new HashMap<>();
     // Participants who sent us their final score.
     Set<String> mFinishedParticipants = new HashSet<>();
     // Called when we receive a real-time message from the network.
@@ -155,7 +148,6 @@ public class MainActivity extends Activity implements
         public void onRealTimeMessageReceived(@NonNull RealTimeMessage realTimeMessage) {
             byte[] buf = realTimeMessage.getMessageData();
             String sender = realTimeMessage.getSenderParticipantId();
-            Log.d(TAG, "Message received: " + (char) buf[0] + "/" + (int) buf[1]);
 
             if (buf[0] == 'F' || buf[0] == 'U') {
                 // score update.
@@ -181,10 +173,39 @@ public class MainActivity extends Activity implements
                 if ((char) buf[0] == 'F') {
                     mFinishedParticipants.add(realTimeMessage.getSenderParticipantId());
                 }
+            } else if (buf[0] == 'P') {
+                // Position update
+                if (mParticipantPlayers.containsKey(sender)) {
+                    byte[] positionX = Arrays.copyOfRange(buf, 1, 4);
+                    byte[] positionY = Arrays.copyOfRange(buf, 5, 8);
+                    mParticipantPlayers.get(sender).setEnemyPosition(new Point(parseIntFromByteArray(positionX), parseIntFromByteArray(positionY)));
+                }
+                StringBuilder sb = new StringBuilder();
+            }
+            // Initialize Game
+            else if (buf[0] == 'I') {
+                for (int i = 0; i < mParticipants.size(); i++) {
+                    Participant participant = mParticipants.get(i);
+                    if (participant.getParticipantId().equals(mMyId)) {
+                        playerColor = parseIntFromByteArray(Arrays.copyOfRange(buf, 4 * i + 1, 4 * i + 4));
+                    }
+                    /// USE RELATIVE POSITION IN FLOAT
+                    mParticipantPlayers.put(participant.getParticipantId(), new Enemy(new Rect(0, 100, 100, 0), parseIntFromByteArray(Arrays.copyOfRange(buf, 4 * i + 1, 4 * i + 4)), new Point(700, 1250), new Point(2, 2)));
+                }
+                StringBuilder sb = new StringBuilder();
+            }
+            // Start Game
+            else if (buf[0] == 'S') {
+                startGame(true);
+                StringBuilder sb = new StringBuilder();
+                sb.append("Start game from ");
+                sb.append(sender);
+                Log.i("ZSX", sb.toString());
             }
         }
     };
     int mCurScreen = -1;
+    private boolean gameReady;
     // Client used to sign in with Google APIs
     private GoogleSignInClient mGoogleSignInClient = null;
     // Client used to interact with the real time multiplayer system.
@@ -214,7 +235,6 @@ public class MainActivity extends Activity implements
             }
         }
     };
-
     // Handle the result of the "Select players UI" we launched when the user clicked the
     // "Invite friends" button. We react by creating a room with those players.
     private String mPlayerId;
@@ -355,9 +375,47 @@ public class MainActivity extends Activity implements
         }
     };
 
+    public static byte[] intToByteArray(int anInteger) {
+        return ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(anInteger).array();
+    }
+
+    public static int parseIntFromByteArray(byte[] byteBarray) {
+        if (byteBarray.length != 4) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Error converting byte array of size ");
+            sb.append(byteBarray.length);
+            sb.append(" to int");
+            Log.e("ZSX", sb.toString());
+        }
+        return ByteBuffer.wrap(byteBarray).order(ByteOrder.LITTLE_ENDIAN).getInt();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+//        getMenuInflater().inflate(R.menu.menu_game, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+//        if (id == R.id.action_settings) {
+//            return true;
+//        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
 
         // Create the client used to sign in.
@@ -412,6 +470,11 @@ public class MainActivity extends Activity implements
         // it is recommended to try and sign in silently from when the app resumes.
         signInSilently();
     }
+
+    /*
+     * CALLBACKS SECTION. This section shows how we implement the several games
+     * API callbacks.
+     */
 
     @Override
     protected void onPause() {
@@ -487,14 +550,9 @@ public class MainActivity extends Activity implements
         }
     }
 
-    /*
-     * CALLBACKS SECTION. This section shows how we implement the several games
-     * API callbacks.
-     */
-
     void startQuickGame() {
         // quick-start a game with 1 randomly selected opponent
-        final int MIN_OPPONENTS = 1, MAX_OPPONENTS = 1;
+        final int MIN_OPPONENTS = 1, MAX_OPPONENTS = 3;
         Bundle autoMatchCriteria = RoomConfig.createAutoMatchCriteria(MIN_OPPONENTS,
                 MAX_OPPONENTS, 0);
         switchToScreen(R.id.screen_wait);
@@ -607,7 +665,7 @@ public class MainActivity extends Activity implements
 
         String message = getString(R.string.status_exception_error, details, status, exception);
 
-        new AlertDialog.Builder(MainActivity.this)
+        new AlertDialog.Builder(Game.this)
                 .setTitle("Error")
                 .setMessage(message + "\n" + errorString)
                 .setNeutralButton(android.R.string.ok, null)
@@ -652,7 +710,8 @@ public class MainActivity extends Activity implements
             if (resultCode == Activity.RESULT_OK) {
                 // ready to start playing
                 Log.d(TAG, "Starting game (waiting room returned OK).");
-                startGame(true);
+                gameReady = true;
+                initializeGame(true);
             } else if (resultCode == GamesActivityResultCodes.RESULT_LEFT_ROOM) {
                 // player indicated that they want to leave the room
                 leaveRoom();
@@ -704,6 +763,10 @@ public class MainActivity extends Activity implements
         Log.d(TAG, "Room created, waiting for it to be ready...");
     }
 
+    /*
+     * GAME LOGIC SECTION. Methods that implement the game's rules.
+     */
+
     // Handle the result of the invitation inbox UI, where the player can pick an invitation
     // to accept. We react by accepting the selected invitation, if any.
     private void handleInvitationInboxResult(int response, Intent data) {
@@ -745,10 +808,6 @@ public class MainActivity extends Activity implements
                     }
                 });
     }
-
-    /*
-     * GAME LOGIC SECTION. Methods that implement the game's rules.
-     */
 
     // Activity is going to the background. We have to leave the current room.
     @Override
@@ -822,14 +881,14 @@ public class MainActivity extends Activity implements
 
             // update the clients
             mRealTimeMultiplayerClient = Games.getRealTimeMultiplayerClient(this, googleSignInAccount);
-            mInvitationsClient = Games.getInvitationsClient(MainActivity.this, googleSignInAccount);
+            mInvitationsClient = Games.getInvitationsClient(Game.this, googleSignInAccount);
 
             // get the playerId from the PlayersClient
             PlayersClient playersClient = Games.getPlayersClient(this, googleSignInAccount);
             playersClient.getCurrentPlayer()
-                    .addOnSuccessListener(new OnSuccessListener<Player>() {
+                    .addOnSuccessListener(new OnSuccessListener<com.google.android.gms.games.Player>() {
                         @Override
-                        public void onSuccess(Player player) {
+                        public void onSuccess(com.google.android.gms.games.Player player) {
                             mPlayerId = player.getPlayerId();
 
                             switchToMainScreen();
@@ -844,7 +903,7 @@ public class MainActivity extends Activity implements
 
         // get the invitation from the connection hint
         // Retrieve the TurnBasedMatch from the connectionHint
-        GamesClient gamesClient = Games.getGamesClient(MainActivity.this, googleSignInAccount);
+        GamesClient gamesClient = Games.getGamesClient(Game.this, googleSignInAccount);
         gamesClient.getActivationHint()
                 .addOnSuccessListener(new OnSuccessListener<Bundle>() {
                     @Override
@@ -864,6 +923,11 @@ public class MainActivity extends Activity implements
                 .addOnFailureListener(createFailureListener("There was a problem getting the activation hint!"));
     }
 
+    /*
+     * COMMUNICATIONS SECTION. Methods that implement the game's network
+     * protocol.
+     */
+
     private OnFailureListener createFailureListener(final String string) {
         return new OnFailureListener() {
             @Override
@@ -881,11 +945,6 @@ public class MainActivity extends Activity implements
 
         switchToMainScreen();
     }
-
-    /*
-     * COMMUNICATIONS SECTION. Methods that implement the game's network
-     * protocol.
-     */
 
     // Show error message about game being cancelled and return to main screen.
     void showGameError() {
@@ -910,35 +969,170 @@ public class MainActivity extends Activity implements
         mSecondsLeft = GAME_DURATION;
         mScore = 0;
         mParticipantScore.clear();
+        mParticipantPlayers.clear();
         mFinishedParticipants.clear();
     }
 
-    // Start the gameplay phase of the game.
-    void startGame(boolean multiplayer) {
-        mMultiplayer = multiplayer;
-        updateScoreDisplay();
-        broadcastScore(false);
-        switchToScreen(R.id.screen_game);
-
-        findViewById(R.id.button_click_me).setVisibility(View.VISIBLE);
-
-        // run the gameTick() method every second to update the game.
-        final Handler h = new Handler();
-        h.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (mSecondsLeft <= 0) {
-                    return;
+    void initializeGame(boolean multiplayer) {
+        if (!multiplayer) {
+            initializeGame(multiplayer);
+        } else {
+            Collections.sort(mParticipants, new Comparator<Participant>() {
+                @Override
+                public int compare(Participant p1, Participant p2) {
+                    return p1.getParticipantId().compareTo(p2.getParticipantId());
                 }
-                gameTick();
-                h.postDelayed(this, 1000);
+            });
+            String hostId = mParticipants.get(0).getParticipantId();
+            if (mMyId.equals(hostId)) {
+                broadcastPlayersColor();
+                broadcastGameStart();
+                startGame(true);
             }
-        }, 1000);
+        }
     }
+
+    private void broadcastGameStart() {
+        // Send start signal to all
+        mMsgBuf[0] = (byte) 'S';
+        for (int i = 0; i < mParticipants.size(); i++) {
+            Participant participant = mParticipants.get(i);
+            if (participant.getParticipantId().equals(mMyId)) {
+                continue;
+            }
+            // final score notification must be sent via reliable message
+            mRealTimeMultiplayerClient.sendReliableMessage(Arrays.copyOfRange(mMsgBuf, 0, 1),
+                    mRoomId, participant.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
+                        @Override
+                        public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
+                            Log.d(TAG, "START message sent");
+                            Log.d(TAG, "  statusCode: " + statusCode);
+                            Log.d(TAG, "  tokenId: " + tokenId);
+                            Log.d(TAG, "  recipientParticipantId: " + recipientParticipantId);
+                        }
+                    })
+                    .addOnSuccessListener(new OnSuccessListener<Integer>() {
+                        @Override
+                        public void onSuccess(Integer tokenId) {
+                            Log.d(TAG, "START message with tokenId: " + tokenId);
+                        }
+                    });
+        }
+    }
+
 
     /*
      * UI SECTION. Methods that implement the game's UI.
      */
+
+    // Start the gameplay phase of the game.
+    void startGame(boolean multiplayer) {
+        mMultiplayer = multiplayer;
+//        Intent intent = new Intent(this, Game.class);
+//        startActivity(intent);
+
+        //turn title off
+//        requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        //set to full screen
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        if (multiplayer) {
+
+        }
+
+        setContentView(new GamePanel(this));
+//        updateScoreDisplay();
+//        broadcastScore(false);
+
+//        switchToScreen(R.id.screen_game);
+
+//        findViewById(R.id.button_click_me).setVisibility(View.VISIBLE);
+//
+//        // run the gameTick() method every second to update the game.
+//        final Handler h = new Handler();
+//        h.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                if (mSecondsLeft <= 0) {
+//                    return;
+//                }
+//                gameTick();
+//                h.postDelayed(this, 1000);
+//            }
+//        }, 1000);
+    }
+
+    private void broadcastPlayersColor() {
+        if (!mMultiplayer) {
+            // playing single-player mode
+            return;
+        }
+        // Host color
+        float[] randomColor = new float[3];
+        Random rand = new Random();
+        randomColor[0] = rand.nextFloat() * 360;
+        randomColor[1] = 0.9f;
+        randomColor[2] = clamp(rand.nextFloat(), 0.4f, 0.8f);
+        int color = Color.HSVToColor(randomColor);
+        playerColor = color;
+
+        // First byte in message indicates whether it's a final score or not
+        mMsgBuf[0] = (byte) 'I';
+
+        int nbParticipant = mParticipants.size();
+        for (int i = 0; i < nbParticipant; i++) {
+            Participant participant = mParticipants.get(i);
+            // If host use playerColor
+            if (participant.getParticipantId() == mMyId) {
+                // Fill buffer with host color
+                byte[] colorByteArray = intToByteArray(playerColor);
+                mMsgBuf[4 * i + 1] = colorByteArray[0];
+                mMsgBuf[4 * i + 2] = colorByteArray[1];
+                mMsgBuf[4 * i + 3] = colorByteArray[2];
+                mMsgBuf[4 * i + 4] = colorByteArray[3];
+            } else {
+                // Different color for all players
+                float[] hsv = new float[3];
+                Color.colorToHSV(color, hsv);
+                hsv[0] = (hsv[0] + 0.2f) * 360 % 360;
+                color = Color.HSVToColor(hsv);
+
+                // Create Enemy
+                mParticipantPlayers.put(participant.getParticipantId(), new Enemy(new Rect(0, 100, 100, 0), color, new Point(1, 1), new Point(2, 2)));
+
+                // Fill buffer with player's color
+                byte[] colorByteArray = intToByteArray(color);
+                mMsgBuf[4 * i + 1] = colorByteArray[0];
+                mMsgBuf[4 * i + 2] = colorByteArray[1];
+                mMsgBuf[4 * i + 3] = colorByteArray[2];
+                mMsgBuf[4 * i + 4] = colorByteArray[3];
+            }
+        }
+        // Send the set of colors to everyone
+        for (int i = 0; i < nbParticipant; i++) {
+            Participant participant = mParticipants.get(i);
+            if (participant.getParticipantId().equals(mMyId)) {
+                continue;
+            }
+            // final score notification must be sent via reliable message
+            mRealTimeMultiplayerClient.sendReliableMessage(Arrays.copyOfRange(mMsgBuf, 0, nbParticipant * 4 + 1),
+                    mRoomId, participant.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
+                        @Override
+                        public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
+                            Log.d(TAG, "COLOR message sent");
+                            Log.d(TAG, "  statusCode: " + statusCode);
+                            Log.d(TAG, "  tokenId: " + tokenId);
+                            Log.d(TAG, "  recipientParticipantId: " + recipientParticipantId);
+                        }
+                    })
+                    .addOnSuccessListener(new OnSuccessListener<Integer>() {
+                        @Override
+                        public void onSuccess(Integer tokenId) {
+                            Log.d(TAG, "COLOR message with tokenId: " + tokenId);
+                        }
+                    });
+        }
+    }
 
     // Game tick -- update countdown, check if game ended.
     void gameTick() {
@@ -957,6 +1151,10 @@ public class MainActivity extends Activity implements
         }
     }
 
+//    public static  byte[] charToByteArray(char aChar){
+//        return ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putChar(aChar).array();
+//    }
+
     // indicates the player scored one point
     void scoreOnePoint() {
         if (mSecondsLeft <= 0) {
@@ -968,6 +1166,44 @@ public class MainActivity extends Activity implements
 
         // broadcast our new score to our peers
         broadcastScore(false);
+    }
+
+//    public static int byteArrayToChar(byte [] byteBarray){
+//        return ByteBuffer.wrap(byteBarray).order(ByteOrder.LITTLE_ENDIAN).getChar();
+//    }
+
+    void broadcastPosition(Player player) {
+        if (!mMultiplayer) {
+            // playing single-player mode
+            return;
+        }
+
+        // First byte in message indicates position update
+        mMsgBuf[0] = (byte) 'P';
+        // Then we send int pos as 4 bytes
+        byte[] playerPosX = intToByteArray(player.getPlayerPosition().x);
+        mMsgBuf[1] = playerPosX[0];
+        mMsgBuf[2] = playerPosX[1];
+        mMsgBuf[3] = playerPosX[2];
+        mMsgBuf[4] = playerPosX[3];
+        byte[] playerPosY = intToByteArray(player.getPlayerPosition().y);
+        mMsgBuf[5] = playerPosY[0];
+        mMsgBuf[6] = playerPosY[1];
+        mMsgBuf[7] = playerPosY[2];
+        mMsgBuf[8] = playerPosY[3];
+
+        // Send to every other participant.
+        for (Participant p : mParticipants) {
+            if (p.getParticipantId().equals(mMyId)) {
+                continue;
+            }
+            if (p.getStatus() != Participant.STATUS_JOINED) {
+                continue;
+            }
+            // it's an interim score notification, so we can use unreliable
+            mRealTimeMultiplayerClient.sendUnreliableMessage(Arrays.copyOfRange(mMsgBuf, 0, 8), mRoomId,
+                    p.getParticipantId());
+        }
     }
 
     // Broadcast my score to everybody else.
@@ -997,7 +1233,7 @@ public class MainActivity extends Activity implements
                         mRoomId, p.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
                             @Override
                             public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
-                                Log.d(TAG, "RealTime message sent");
+                                Log.d(TAG, "Score message sent");
                                 Log.d(TAG, "  statusCode: " + statusCode);
                                 Log.d(TAG, "  tokenId: " + tokenId);
                                 Log.d(TAG, "  recipientParticipantId: " + recipientParticipantId);
@@ -1006,7 +1242,7 @@ public class MainActivity extends Activity implements
                         .addOnSuccessListener(new OnSuccessListener<Integer>() {
                             @Override
                             public void onSuccess(Integer tokenId) {
-                                Log.d(TAG, "Created a reliable message with tokenId: " + tokenId);
+                                Log.d(TAG, "Score message with tokenId: " + tokenId);
                             }
                         });
             } else {

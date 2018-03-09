@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 android {
     signingConfigs {
         debug {
-            storeFile file('C:/Users/youri/Documents/INF8405/INF8405/ZSX/inf8405.keystore')
+            storeFile file('../inf8405.keystore')
             keyAlias 'key0'
             keyPassword 'inf8405'
             storePassword 'inf8405'
