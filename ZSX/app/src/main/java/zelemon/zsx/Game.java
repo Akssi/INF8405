@@ -100,7 +100,7 @@ public class Game extends Activity implements
             R.id.button_accept_popup_invitation, R.id.button_invite_players,
             R.id.button_quick_game, R.id.button_see_invitations, R.id.button_sign_in,
             R.id.button_sign_out, R.id.button_click_me, R.id.button_single_player,
-            R.id.button_single_player_2
+            R.id.button_single_player_2, R.id.button_see_map
     };
     // This array lists all the individual screens our game has.
     final static int[] SCREENS = {
@@ -557,6 +557,11 @@ public class Game extends Activity implements
             case R.id.button_quick_game:
                 // user wants to play against a random opponent right now
                 startQuickGame();
+                break;
+            case R.id.button_see_map:
+                //switchToScreen(R.id.screen_wait);
+                Intent intent = new Intent(this, MapsActivity.class);
+                startActivity(intent);
                 break;
             case R.id.button_click_me:
                 // (gameplay) user clicked the "click me" button
