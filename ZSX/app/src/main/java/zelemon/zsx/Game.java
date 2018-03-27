@@ -1253,7 +1253,7 @@ public class Game extends Activity implements
 
     public void broadcastCollision() {
         // Already registered collision(s)/Restarting
-        if (isRestarting) {
+        if (isRestarting || mParticipants == null ) {
             return;
         }
         mMsgBuf[0] = (byte) 'C';

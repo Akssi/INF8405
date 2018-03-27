@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.renderscript.Int2;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -119,9 +120,20 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     public void update() {
+
         player.update();
         for (Enemy enemy : game.mParticipantEnemy.values()) {
             enemy.update();
+            for(Int2 pos : enemy.getTrailPos()){
+                if(player.getPlayerPosition().x == pos.x && player.getPlayerPosition().y == pos.y)
+                {
+                    // Collision
+                    game.broadcastCollision();
+                    stopGameUpdate();
+                    break;
+                }
+            }
+
             if (player.getPlayerPosition().x == enemy.getEnemyPosition().x && player.getPlayerPosition().y == enemy.getEnemyPosition().y) {
                 // Collision
                 game.broadcastCollision();
@@ -129,6 +141,21 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
             }
 
         }
+
+        //for(Int2 pos : player.getTrailPos()){
+        if(player.getTrailPos().size() > 2)
+            for(int i = 0; i < player.getTrailPos().size()-2; i++){
+                Int2 pos = player.getTrailPos().get(i);
+                if(player.getPlayerPosition().x == pos.x && player.getPlayerPosition().y == pos.y)
+                {
+                    Log.i("ZSX", "COLLISION");
+                    // Collision
+                    game.broadcastCollision();
+                    stopGameUpdate();
+                    break;
+                }
+            }
+
         game.broadcastPosition(player);
     }
 

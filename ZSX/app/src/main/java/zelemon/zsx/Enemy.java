@@ -10,6 +10,9 @@ import android.util.Log;
 
 import static android.support.v4.math.MathUtils.clamp;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by youri on 2018-03-08.
  */
@@ -18,6 +21,9 @@ public class Enemy implements GameObject {
 
     private Rect enemySprite;
     private int enemyColor;
+    private Point screenSize = new Point(1440, 2560);
+    private List<Rect> trail;
+    private List<Int2> trailPos;
     private Int2 enemyPosition;
     private Int2 gridSize;
     private Float2 pixelPerSquare;
@@ -28,6 +34,8 @@ public class Enemy implements GameObject {
         this.enemyColor = enemyColor;
         this.enemyPosition = enemyPosition;
         this.gridSize = gridSize;
+        this.trail = new ArrayList<>();
+        this.trailPos = new ArrayList<>();
     }
 
     @Override
@@ -35,6 +43,10 @@ public class Enemy implements GameObject {
         Paint paint = new Paint();
         paint.setColor(enemyColor);
         canvas.drawRect(enemySprite, paint);
+
+        paint.setAlpha(50);
+        for(Rect rect : trail)
+            canvas.drawRect(rect, paint);
     }
 
     @Override
@@ -48,6 +60,12 @@ public class Enemy implements GameObject {
                 (int)(enemyPosition.y * pixelPerSquare.y),
                 (int)((enemyPosition.x + 1) * pixelPerSquare.x),
                 (int)((enemyPosition.y + 1) * pixelPerSquare.y));
+
+        if(trail.isEmpty() || !trail.get(trail.size()-1).contains((int)((enemyPosition.x + 0.5) * pixelPerSquare.x),(int)((enemyPosition.y + 0.5) * pixelPerSquare.y)))
+        {
+            trail.add(enemySprite);
+            trailPos.add(enemyPosition);
+        }
     }
 
     public void setEnemyPosition(Int2 enemyPosition) {
@@ -62,5 +80,9 @@ public class Enemy implements GameObject {
     public void updateScreenDim(Point newScreenDim) {
         pixelPerSquare = new Float2(newScreenDim.x/(float)(gridSize.x),(newScreenDim.y/(float)(gridSize.y)));
 //        Log.i("ZSX", "Screen dim update");
+    }
+
+    public List<Int2> getTrailPos(){
+        return this.trailPos;
     }
 }

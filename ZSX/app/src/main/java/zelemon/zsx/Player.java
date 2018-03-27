@@ -9,6 +9,9 @@ import android.renderscript.Int2;
 import android.renderscript.Int2;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static android.support.v4.math.MathUtils.clamp;
 import static java.lang.Math.round;
 
@@ -20,6 +23,10 @@ public class Player implements GameObject {
 
     private Rect playerSprite;
     private int playerColor;
+    private float speed = 0.005f;
+    private Point screenSize = new Point(1440, 2560);
+    private List<Rect> trail;
+    private List<Int2> trailPos;
     private Int2 playerPosition;
     private Point direction = new Point(1, 0);
     private Int2 gridSize;
@@ -29,6 +36,8 @@ public class Player implements GameObject {
         this.playerSprite = new Rect(0, 1, 0, 1);
         this.playerColor = playerColor;
         this.playerPosition = playerPosition;
+        this.trail = new ArrayList<>();
+        this.trailPos = new ArrayList<>();
         this.gridSize = gridSize;
 
         if (playerPosition.x == gridSize.x/2) {
@@ -60,6 +69,10 @@ public class Player implements GameObject {
         Paint paint = new Paint();
         paint.setColor(playerColor);
         canvas.drawRect(playerSprite, paint);
+
+        paint.setAlpha(50);
+        for(Rect rect : trail)
+            canvas.drawRect(rect, paint);
     }
 
     @Override
@@ -71,10 +84,17 @@ public class Player implements GameObject {
         if (newPlayerPosition != playerPosition) {
             playerPosition = newPlayerPosition;
         }
+
         playerSprite = new Rect((int) (playerPosition.x * pixelPerSquare.x),
                 (int) (playerPosition.y * pixelPerSquare.y),
                 (int) ((playerPosition.x + 1) * pixelPerSquare.x),
                 (int) ((playerPosition.y + 1) * pixelPerSquare.y));
+
+        if(trail.isEmpty() || !trail.get(trail.size()-1).contains((int) ((playerPosition.x + 0.5) * pixelPerSquare.x), (int) ((playerPosition.y + 0.5) * pixelPerSquare.y)))
+        {
+            trail.add(playerSprite);
+            trailPos.add(playerPosition);
+        }
     }
 
     public void updateDirection(Point direction) {
@@ -84,5 +104,9 @@ public class Player implements GameObject {
     public void updateScreenDim(Point newScreenDim) {
         pixelPerSquare = new Float2(newScreenDim.x / (float) (gridSize.x), (newScreenDim.y / (float) (gridSize.y)));
 //        Log.i("ZSX", "Screen dim update");
+    }
+
+    public List<Int2> getTrailPos(){
+        return this.trailPos;
     }
 }
