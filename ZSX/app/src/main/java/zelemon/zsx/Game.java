@@ -6,13 +6,18 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.os.Bundle;
-import android.renderscript.Float2;
+import android.os.CountDownTimer;
+import android.os.Handler;
+import android.renderscript.Int2;
 import android.support.annotation.NonNull;
+import android.support.constraint.ConstraintLayout;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.SurfaceView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.TextView;
 
@@ -44,6 +49,7 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -56,8 +62,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-
-import static android.support.v4.math.MathUtils.clamp;
 
 
 /**
@@ -93,13 +97,25 @@ public class Game extends Activity implements
     * API INTEGRATION SECTION. This section contains the code that integrates
     * the game with the Google Play game services API.
     */
-    final static int GAME_DURATION = 20; // game duration, seconds.
+
+    // Grid size
+    final static Int2 GRID_SIZE = new Int2(90, 160);
+    final static Int2[] TWO_PLAYER_START = new Int2[]{
+            new Int2(GRID_SIZE.x / 4, GRID_SIZE.y / 2),
+            new Int2(3 * GRID_SIZE.x / 4, GRID_SIZE.y / 2)};
+
+    final static Int2[] THREE_PLUS_PLAYER_START = new Int2[]{
+            new Int2(GRID_SIZE.x / 4, GRID_SIZE.y / 4),
+            new Int2(3 * GRID_SIZE.x / 4, GRID_SIZE.y / 4),
+            new Int2(GRID_SIZE.x / 4, 3 * GRID_SIZE.y / 4),
+            new Int2(3 * GRID_SIZE.x / 4, 3 * GRID_SIZE.y / 4)};
+
     // This array lists everything that's clickable, so we can install click
     // event handlers.
     final static int[] CLICKABLES = {
             R.id.button_accept_popup_invitation, R.id.button_invite_players,
             R.id.button_quick_game, R.id.button_see_invitations, R.id.button_sign_in,
-            R.id.button_sign_out, R.id.button_click_me, R.id.button_single_player,
+            R.id.button_sign_out, R.id.button_single_player,
             R.id.button_single_player_2, R.id.button_see_map
     };
     // This array lists all the individual screens our game has.
@@ -133,78 +149,31 @@ public class Game extends Activity implements
     int mScore = 0; // user's current score
     // Score of other participants. We update this as we receive their scores
     // from the network.
-    Map<String, Integer> mParticipantScore = new HashMap<>();
+    Map<String, Integer> mParticipantLives = new HashMap<>();
     Map<String, Enemy> mParticipantEnemy = new HashMap<>();
     // Participants who sent us their final score.
     Set<String> mFinishedParticipants = new HashSet<>();
     int mCurScreen = -1;
-    // Called when we receive a real-time message from the network.
-    // Messages in our game are made up of 2 bytes: the first one is 'F' or 'U'
-    // indicating
-    // whether it's a final or interim score. The second byte is the score.
-    // There is also the
-    // 'S' message, which indicates that the game should start.
-    OnRealTimeMessageReceivedListener mOnRealTimeMessageReceivedListener = new OnRealTimeMessageReceivedListener() {
-        @Override
-        public void onRealTimeMessageReceived(@NonNull RealTimeMessage realTimeMessage) {
-            byte[] buf = realTimeMessage.getMessageData();
-            String sender = realTimeMessage.getSenderParticipantId();
+    private boolean isRestarting;
 
-            if (buf[0] == 'F' || buf[0] == 'U') {
-                // score update.
-                int existingScore = mParticipantScore.containsKey(sender) ?
-                        mParticipantScore.get(sender) : 0;
-                int thisScore = (int) buf[1];
-                if (thisScore > existingScore) {
-                    // this check is necessary because packets may arrive out of
-                    // order, so we
-                    // should only ever consider the highest score we received, as
-                    // we know in our
-                    // game there is no way to lose points. If there was a way to
-                    // lose points,
-                    // we'd have to add a "serial number" to the packet.
-                    mParticipantScore.put(sender, thisScore);
-                }
-
-                // update the scores on the screen
-                updatePeerScoresDisplay();
-
-                // if it's a final score, mark this participant as having finished
-                // the game
-                if ((char) buf[0] == 'F') {
-                    mFinishedParticipants.add(realTimeMessage.getSenderParticipantId());
-                }
-            } else if (buf[0] == 'P') {
-                // Position update
-                if (mParticipantEnemy.containsKey(sender)) {
-                    byte[] positionX = Arrays.copyOfRange(buf, 1, 5);
-                    byte[] positionY = Arrays.copyOfRange(buf, 5, 9);
-                    mParticipantEnemy.get(sender).setEnemyPosition(new Float2(parseFloatFromByteArray(positionX), parseFloatFromByteArray(positionY)));
-                }
-                StringBuilder sb = new StringBuilder();
-            }
-            // Initialize Game
-            else if (buf[0] == 'I') {
-                for (int i = 0; i < mParticipants.size(); i++) {
-                    Participant participant = mParticipants.get(i);
-                    if (participant.getParticipantId().equals(mMyId)) {
-                        playerColor = parseIntFromByteArray(Arrays.copyOfRange(buf, 4 * i + 1, 4 * i + 5));
-                    } else {
-                        Log.v("ZSX", "Creating Enemy at initialization");
-                        mParticipantEnemy.put(participant.getParticipantId(), new Enemy(new Rect(0, 100, 100, 0), parseIntFromByteArray(Arrays.copyOfRange(buf, 4 * i + 1, 4 * i + 5)), new Float2(0.5f, 0.5f)));
-                    }
-                }
-            }
-            // Start Game
-            else if (buf[0] == 'S') {
-                startGame(true);
-                StringBuilder sb = new StringBuilder();
-                sb.append("Start game from ");
-                sb.append(sender);
-                Log.i("ZSX", sb.toString());
-            }
+    private void checkCollisionResolve() {
+        if (mFinishedParticipants.size() == mParticipants.size()) {
+            restartGame();
         }
-    };
+    }
+
+    private TextView mStartGameCountdown;
+    private boolean isInCollision;
+
+    private Int2 getInitialPosition(int i) {
+        if (mParticipants.size() <= 2)
+            return TWO_PLAYER_START[i];
+        else if (mParticipants.size() <= 4)
+            return THREE_PLUS_PLAYER_START[i];
+        else
+            throw new RuntimeException("Number of participant above 4");
+    }
+
     private boolean gameReady;
     // Client used to sign in with Google APIs
     private GoogleSignInClient mGoogleSignInClient = null;
@@ -374,6 +343,81 @@ public class Game extends Activity implements
             switchToMainScreen();
         }
     };
+    private int mParticipantIndex;
+    private GamePanel mGamePanel;
+    private boolean isWaitingCollisionAck;
+    // Called when we receive a real-time message from the network.
+    // Messages in our game are made up of 2 bytes: the first one is 'F' or 'U'
+    // indicating
+    // whether it's a final or interim score. The second byte is the score.
+    // There is also the
+    // 'S' message, which indicates that the game should start.
+    OnRealTimeMessageReceivedListener mOnRealTimeMessageReceivedListener = new OnRealTimeMessageReceivedListener() {
+        @Override
+        public void onRealTimeMessageReceived(@NonNull RealTimeMessage realTimeMessage) {
+            byte[] buf = realTimeMessage.getMessageData();
+            String sender = realTimeMessage.getSenderParticipantId();
+
+            if (buf[0] == 'C' && !isRestarting) {
+                mFinishedParticipants.add(sender);
+//                mParticipantLives.put(sender, mParticipantLives.get(sender)-1);
+                // update the scores on the screen
+//                updatePeerScoresDisplay();
+
+                // Mark this participant as stopped
+//                isInCollision = true;
+                mGamePanel.stopGameUpdate();
+                sendCollisionAck(sender);
+                Log.i("ZSX", "COLLISION message received");
+                Log.i("ZSX", "\tfrom " + sender);
+//                Handler handler = new Handler();
+//                handler.postDelayed(new DelayedAck(sender), 1000);
+                if (isWaitingCollisionAck) {
+                    checkCollisionResolve();
+                }
+
+
+            } else if (buf[0] == 'A' && !isRestarting) {
+                Log.i("ZSX", "ACK COLLISION message received");
+                Log.i("ZSX", "\tfrom " + sender);
+                isWaitingCollisionAck = false;
+                mFinishedParticipants.add(sender);
+                checkCollisionResolve();
+            } else if (buf[0] == 'P') {
+                // Position update
+                if (mParticipantEnemy.containsKey(sender)) {
+                    byte[] positionX = Arrays.copyOfRange(buf, 1, 5);
+                    byte[] positionY = Arrays.copyOfRange(buf, 5, 9);
+                    mParticipantEnemy.get(sender).setEnemyPosition(new Int2(parseIntFromByteArray(positionX), parseIntFromByteArray(positionY)));
+                }
+                StringBuilder sb = new StringBuilder();
+            }
+            // Initialize Game
+            else if (buf[0] == 'I') {
+                Log.i("ZSX", "INITIALIZE message received");
+                Log.i("ZSX", "\tfrom " + sender);
+                for (int i = 0; i < mParticipants.size(); i++) {
+                    Participant participant = mParticipants.get(i);
+                    if (i == mParticipantIndex) {
+                        playerColor = parseIntFromByteArray(Arrays.copyOfRange(buf, 4 * i + 1, 4 * i + 5));
+                    } else {
+                        Log.v("ZSX", "Creating Enemy at initialization");
+                        mParticipantEnemy.put(participant.getParticipantId(), new Enemy(parseIntFromByteArray(Arrays.copyOfRange(buf, 4 * i + 1, 4 * i + 5)), getInitialPosition(i), GRID_SIZE));
+                    }
+                }
+            }
+            // Start Game
+            else if (buf[0] == 'S') {
+//                Log.i("ZSX", String.valueOf(mParticipants.size()));
+//                Log.i("ZSX", String.valueOf(mParticipantIndex));
+                startGame(true);
+                StringBuilder sb = new StringBuilder();
+                sb.append("START message received\n\tfrom ");
+                sb.append(sender);
+                Log.i("ZSX", sb.toString());
+            }
+        }
+    };
 
     public static byte[] intToByteArray(int anInteger) {
         return ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(anInteger).array();
@@ -476,6 +520,11 @@ public class Game extends Activity implements
         }
     }
 
+    /*
+     * CALLBACKS SECTION. This section shows how we implement the several games
+     * API callbacks.
+     */
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -485,11 +534,6 @@ public class Game extends Activity implements
         // it is recommended to try and sign in silently from when the app resumes.
         signInSilently();
     }
-
-    /*
-     * CALLBACKS SECTION. This section shows how we implement the several games
-     * API callbacks.
-     */
 
     @Override
     protected void onPause() {
@@ -562,10 +606,6 @@ public class Game extends Activity implements
                 //switchToScreen(R.id.screen_wait);
                 Intent intent = new Intent(this, MapsActivity.class);
                 startActivity(intent);
-                break;
-            case R.id.button_click_me:
-                // (gameplay) user clicked the "click me" button
-                scoreOnePoint();
                 break;
         }
     }
@@ -745,6 +785,10 @@ public class Game extends Activity implements
         super.onActivityResult(requestCode, resultCode, intent);
     }
 
+    /*
+     * GAME LOGIC SECTION. Methods that implement the game's rules.
+     */
+
     private void handleSelectPlayersResult(int response, Intent data) {
         if (response != Activity.RESULT_OK) {
             Log.w(TAG, "*** select players UI cancelled, " + response);
@@ -782,10 +826,6 @@ public class Game extends Activity implements
         mRealTimeMultiplayerClient.create(mRoomConfig);
         Log.d(TAG, "Room created, waiting for it to be ready...");
     }
-
-    /*
-     * GAME LOGIC SECTION. Methods that implement the game's rules.
-     */
 
     // Handle the result of the invitation inbox UI, where the player can pick an invitation
     // to accept. We react by accepting the selected invitation, if any.
@@ -893,6 +933,11 @@ public class Game extends Activity implements
                 .addOnFailureListener(createFailureListener("There was a problem getting the waiting room!"));
     }
 
+    /*
+     * COMMUNICATIONS SECTION. Methods that implement the game's network
+     * protocol.
+     */
+
     private void onConnected(GoogleSignInAccount googleSignInAccount) {
         Log.d(TAG, "onConnected(): connected to Google APIs");
         if (mSignedInAccount != googleSignInAccount) {
@@ -943,11 +988,6 @@ public class Game extends Activity implements
                 .addOnFailureListener(createFailureListener("There was a problem getting the activation hint!"));
     }
 
-    /*
-     * COMMUNICATIONS SECTION. Methods that implement the game's network
-     * protocol.
-     */
-
     private OnFailureListener createFailureListener(final String string) {
         return new OnFailureListener() {
             @Override
@@ -980,48 +1020,29 @@ public class Game extends Activity implements
             mParticipants = room.getParticipants();
         }
         if (mParticipants != null) {
-            updatePeerScoresDisplay();
+//            updatePeerScoresDisplay();
         }
     }
 
     // Reset game variables in preparation for a new game.
     void resetGameVars() {
-        mSecondsLeft = GAME_DURATION;
         mScore = 0;
-        mParticipantScore.clear();
+        mParticipantLives.clear();
         mParticipantEnemy.clear();
         mFinishedParticipants.clear();
     }
 
-    void initializeGame(boolean multiplayer) {
-        Log.i("ZSX", "INIT GAME");
 
-        mMultiplayer = multiplayer;
-        if (!mMultiplayer) {
-            initializeGame(mMultiplayer);
-        } else {
-            Collections.sort(mParticipants, new Comparator<Participant>() {
-                @Override
-                public int compare(Participant p1, Participant p2) {
-                    return p1.getParticipantId().compareTo(p2.getParticipantId());
-                }
-            });
-            String hostId = mParticipants.get(0).getParticipantId();
-            if (mMyId.equals(hostId)) {
-                Log.v("ZSX", "Broadcasting Colors");
-                broadcastPlayersColor();
-                broadcastGameStart();
-                startGame(mMultiplayer);
-            }
-        }
-    }
+    /*
+     * UI SECTION. Methods that implement the game's UI.
+     */
 
     private void broadcastGameStart() {
         // Send start signal to all
         mMsgBuf[0] = (byte) 'S';
         for (int i = 0; i < mParticipants.size(); i++) {
             Participant participant = mParticipants.get(i);
-            if (participant.getParticipantId().equals(mMyId)) {
+            if (i == mParticipantIndex) {
                 continue;
             }
             // final score notification must be sent via reliable message
@@ -1044,10 +1065,58 @@ public class Game extends Activity implements
         }
     }
 
+    void initializeGame(boolean multiplayer) {
+        Log.i("ZSX", "Game initialization from " + mParticipants.get(mParticipantIndex).getParticipantId());
 
-    /*
-     * UI SECTION. Methods that implement the game's UI.
-     */
+        mMultiplayer = multiplayer;
+        if (!mMultiplayer) {
+            startGame(mMultiplayer);
+        } else {
+            Collections.sort(mParticipants, new Comparator<Participant>() {
+                @Override
+                public int compare(Participant p1, Participant p2) {
+                    return p1.getParticipantId().compareTo(p2.getParticipantId());
+                }
+            });
+            for (int i = 0; i < mParticipants.size(); i++) {
+                Participant participant = mParticipants.get(i);
+                if (participant.getParticipantId().equals(mMyId)) {
+                    mParticipantIndex = i;
+                    break;
+                }
+            }
+            if (mParticipantIndex == 0) {
+                Log.v("ZSX", "Broadcasting colors from " + mParticipants.get(mParticipantIndex).getParticipantId());
+                broadcastPlayersColor();
+                broadcastGameStart();
+                startGame(mMultiplayer);
+            }
+        }
+    }
+
+    void restartGame() {
+        Log.i("ZSX", "Restarting game from " + mParticipants.get(mParticipantIndex).getParticipantId());
+        if (!mMultiplayer) {
+            startGame(mMultiplayer);
+        } else {
+            for (int i = 0; i < mParticipants.size(); i++) {
+                Participant participant = mParticipants.get(i);
+                if (i != mParticipantIndex) {
+                    Enemy enemy = mParticipantEnemy.get(participant.getParticipantId());
+                    enemy.setEnemyPosition(getInitialPosition(i));
+                    mParticipantEnemy.put(participant.getParticipantId(), enemy);
+                }
+            }
+            mFinishedParticipants.clear();
+            isRestarting = true;
+            if (mParticipantIndex == 0) {
+                Log.v("ZSX", "Broadcasting restart game from " + mParticipants.get(mParticipantIndex).getParticipantId());
+
+                broadcastGameStart();
+                startGame(mMultiplayer);
+            }
+        }
+    }
 
     // Start the gameplay phase of the game.
     void startGame(boolean multiplayer) {
@@ -1060,53 +1129,69 @@ public class Game extends Activity implements
 
         //set to full screen
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        ConstraintLayout gameScreen = findViewById(R.id.screen_game);
+        SurfaceView viewTemplate = findViewById(R.id.game_panel);
+        ViewGroup.LayoutParams params = viewTemplate.getLayoutParams();
+        gameScreen.removeView(viewTemplate);
 
+        mStartGameCountdown = findViewById(R.id.start_countdown);
+        ViewGroup.LayoutParams textViewParam = mStartGameCountdown.getLayoutParams();
+        gameScreen.removeView(mStartGameCountdown);
+        Int2 playerPosition = new Int2(GRID_SIZE.x / 2, GRID_SIZE.y / 2);
+        if (multiplayer) {
+            playerPosition = getInitialPosition(mParticipantIndex);
+        }
+        mGamePanel = new GamePanel(this, GRID_SIZE, playerPosition);
+        gameScreen.addView(mGamePanel, params);
+        gameScreen.addView(mStartGameCountdown, textViewParam);
+//        findViewById(R.id.background_image_view).setBackgroundColor(Color.CYAN);
         switchToScreen(R.id.screen_game);
-        setContentView(new GamePanel(this));
-//        updateScoreDisplay();
-//        broadcastScore(false);
 
+        mStartGameCountdown.setVisibility(View.VISIBLE);
+        new CountDownTimer(3000, 50) {
+            public void onTick(long millisUntilFinished) {
+                BigDecimal decimal = round((millisUntilFinished / 1000.0f), 2);
+                mStartGameCountdown.setText(getString(R.string.start_countdown_label, String.valueOf(decimal)));
+            }
 
-//        findViewById(R.id.button_click_me).setVisibility(View.VISIBLE);
-//
-//        // run the gameTick() method every second to update the game.
-//        final Handler h = new Handler();
-//        h.postDelayed(new Runnable() {
-//            @Override
-//            public void run() {
-//                if (mSecondsLeft <= 0) {
-//                    return;
-//                }
-//                gameTick();
-//                h.postDelayed(this, 1000);
-//            }
-//        }, 1000);
+            public void onFinish() {
+                isRestarting = false;
+                mStartGameCountdown.setVisibility(View.GONE);
+                mGamePanel.startGameUpdate();
+            }
+        }.start();
+    }
+
+    // Source: https://stackoverflow.com/questions/8911356/whats-the-best-practice-to-round-a-float-to-2-decimals
+    public static BigDecimal round(float d, int decimalPlace) {
+        BigDecimal bd = new BigDecimal(Float.toString(d));
+        bd = bd.setScale(decimalPlace, BigDecimal.ROUND_HALF_UP);
+        return bd;
     }
 
     private void broadcastPlayersColor() {
         if (!mMultiplayer) {
             // playing single-player mode
 
-            Log.i("ZSX", " No color broadcast in single player");
+            Log.i("ZSX", "No color broadcast in single player");
             return;
         }
         // Host color
         float[] randomColor = new float[3];
         Random rand = new Random();
         randomColor[0] = rand.nextFloat() * 360;
-        randomColor[1] = 0.9f;
-        randomColor[2] = clamp(rand.nextFloat(), 0.65f, 0.95f);
+        randomColor[1] = 1.0f;
+        randomColor[2] = 1.0f;
         int color = Color.HSVToColor(randomColor);
         playerColor = color;
 
-        // First byte in message indicates whether it's a final score or not
         mMsgBuf[0] = (byte) 'I';
 
         int nbParticipant = mParticipants.size();
         byte[] colorByteArray;
         for (int i = 0; i < nbParticipant; i++) {
             Participant participant = mParticipants.get(i);
-            if (participant.getParticipantId().equals(mMyId)) {
+            if (i == mParticipantIndex) {
                 // Fill buffer with host color for client's message
                 colorByteArray = intToByteArray(playerColor);
                 mMsgBuf[4 * i + 1] = colorByteArray[0];
@@ -1121,7 +1206,7 @@ public class Game extends Activity implements
                 color = Color.HSVToColor(hsv);
 
                 // Create Enemy for host
-                mParticipantEnemy.put(participant.getParticipantId(), new Enemy(new Rect(0, 100, 100, 0), color, new Float2(0.5f, 0.5f)));
+                mParticipantEnemy.put(participant.getParticipantId(), new Enemy(color, getInitialPosition(i), GRID_SIZE));
 
                 // Fill buffer with player's color for client's message
                 colorByteArray = intToByteArray(color);
@@ -1134,7 +1219,7 @@ public class Game extends Activity implements
         // Send the set of colors to everyone
         for (int i = 0; i < nbParticipant; i++) {
             Participant participant = mParticipants.get(i);
-            if (participant.getParticipantId().equals(mMyId)) {
+            if (i == mParticipantIndex) {
                 continue;
             }
             // final score notification must be sent via reliable message
@@ -1143,8 +1228,8 @@ public class Game extends Activity implements
                         @Override
                         public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
                             Log.d(TAG, "COLOR message sent");
-                            Log.d(TAG, "  statusCode: " + statusCode);
-                            Log.d(TAG, "  tokenId: " + tokenId);
+//                            Log.d(TAG, "  statusCode: " + statusCode);
+//                            Log.d(TAG, "  tokenId: " + tokenId);
                             Log.d(TAG, "  recipientParticipantId: " + recipientParticipantId);
                         }
                     })
@@ -1157,43 +1242,88 @@ public class Game extends Activity implements
         }
     }
 
-    // Game tick -- update countdown, check if game ended.
-    void gameTick() {
-        if (mSecondsLeft > 0) {
-            --mSecondsLeft;
-        }
-
-        // update countdown
-        ((TextView) findViewById(R.id.countdown)).setText("0:" +
-                (mSecondsLeft < 10 ? "0" : "") + String.valueOf(mSecondsLeft));
-
-        if (mSecondsLeft <= 0) {
-            // finish game
-            findViewById(R.id.button_click_me).setVisibility(View.GONE);
-            broadcastScore(true);
-        }
-    }
-
 //    public static  byte[] charToByteArray(char aChar){
 //        return ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putChar(aChar).array();
 //    }
 
-    // indicates the player scored one point
-    void scoreOnePoint() {
-        if (mSecondsLeft <= 0) {
-            return; // too late!
-        }
-        ++mScore;
-        updateScoreDisplay();
-        updatePeerScoresDisplay();
-
-        // broadcast our new score to our peers
-        broadcastScore(false);
-    }
-
 //    public static int byteArrayToChar(byte [] byteBarray){
 //        return ByteBuffer.wrap(byteBarray).order(ByteOrder.LITTLE_ENDIAN).getChar();
 //    }
+
+
+    public void broadcastCollision() {
+        // Already registered collision(s)/Restarting
+        if (isRestarting) {
+            return;
+        }
+        mMsgBuf[0] = (byte) 'C';
+        isWaitingCollisionAck = true;
+        // Send to every other participant.
+        for (Participant p : mParticipants) {
+            if (p.getParticipantId().equals(mMyId)) {
+                mFinishedParticipants.add(mPlayerId);
+                continue;
+            }
+            if (p.getStatus() != Participant.STATUS_JOINED) {
+                continue;
+            }
+            // collision notification must be sent via reliable message to restart game
+            mRealTimeMultiplayerClient.sendReliableMessage(mMsgBuf,
+                    mRoomId, p.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
+                        @Override
+                        public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
+                            Log.d(TAG, "COLLISION message sent");
+//                            Log.d(TAG, "  statusCode: " + statusCode);
+//                            Log.d(TAG, "  tokenId: " + tokenId);
+                            Log.d(TAG, "  recipientParticipantId: " + recipientParticipantId);
+                        }
+                    })
+                    .addOnSuccessListener(new OnSuccessListener<Integer>() {
+                        @Override
+                        public void onSuccess(Integer tokenId) {
+                            Log.d(TAG, "COLLISION message with tokenId: " + tokenId);
+                        }
+                    });
+        }
+    }
+
+    public void sendCollisionAck(String participantId) {
+        if (isRestarting) {
+            return;
+        }
+        mMsgBuf[0] = (byte) 'A';
+
+        // Send to every other participant.
+        for (Participant p : mParticipants) {
+            if (p.getParticipantId().equals(mMyId)) {
+                continue;
+            }
+            if (p.getStatus() != Participant.STATUS_JOINED) {
+                continue;
+            }
+            // collision notification must be sent via reliable message to restart game
+            mRealTimeMultiplayerClient.sendReliableMessage(mMsgBuf,
+                    mRoomId, participantId, new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
+                        @Override
+                        public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
+                            Log.d(TAG, "ACK COLLISION message sent");
+//                            Log.d(TAG, "  statusCode: " + statusCode);
+//                            Log.d(TAG, "  tokenId: " + tokenId);
+                            Log.d(TAG, "  recipientParticipantId: " + recipientParticipantId);
+                        }
+                    })
+                    .addOnSuccessListener(new OnSuccessListener<Integer>() {
+                        @Override
+                        public void onSuccess(Integer tokenId) {
+                            if (!isWaitingCollisionAck && !isRestarting) {
+                                mFinishedParticipants.add(mPlayerId);
+                                checkCollisionResolve();
+                            }
+                            Log.d(TAG, "ACK COLLISION message with tokenId: " + tokenId);
+                        }
+                    });
+        }
+    }
 
     public void broadcastPosition(Player player) {
         if (!mMultiplayer) {
@@ -1204,12 +1334,12 @@ public class Game extends Activity implements
         // First byte in message indicates position update
         mMsgBuf[0] = (byte) 'P';
         // Then we send int pos as 4 bytes
-        byte[] playerPosX = floatToByteArray(player.getPlayerPosition().x);
+        byte[] playerPosX = intToByteArray(player.getPlayerPosition().x);
         mMsgBuf[1] = playerPosX[0];
         mMsgBuf[2] = playerPosX[1];
         mMsgBuf[3] = playerPosX[2];
         mMsgBuf[4] = playerPosX[3];
-        byte[] playerPosY = floatToByteArray(player.getPlayerPosition().y);
+        byte[] playerPosY = intToByteArray(player.getPlayerPosition().y);
         mMsgBuf[5] = playerPosY[0];
         mMsgBuf[6] = playerPosY[1];
         mMsgBuf[7] = playerPosY[2];
@@ -1277,13 +1407,6 @@ public class Game extends Activity implements
     }
 
     void switchToScreen(int screenId) {
-        if (mCurScreen == R.id.screen_game) {
-            setContentView(R.layout.activity_main);
-            // set up a click listener for everything we care about
-            for (int id : CLICKABLES) {
-                findViewById(id).setOnClickListener(this);
-            }
-        }
         // make the requested screen visible; hide all others.
         for (int id : SCREENS) {
             findViewById(id).setVisibility(screenId == id ? View.VISIBLE : View.GONE);
@@ -1314,9 +1437,9 @@ public class Game extends Activity implements
     }
 
     // updates the label that shows my score
-    void updateScoreDisplay() {
-        ((TextView) findViewById(R.id.my_score)).setText(formatScore(mScore));
-    }
+//    void updateScoreDisplay() {
+//        ((TextView) findViewById(R.id.my_score)).setText(formatScore(mScore));
+//    }
 
     // formats a score as a three-digit number
     String formatScore(int i) {
@@ -1327,35 +1450,41 @@ public class Game extends Activity implements
         return s.length() == 1 ? "00" + s : s.length() == 2 ? "0" + s : s;
     }
 
+    // formats a time as a X.XX number
+//    String formatTime(float i) {
+//        String s = String.valueOf(i);
+//        return i < 1 ? "0" + s : s.length() == 2 ? "0" + s : s;
+//    }
+
     // updates the screen with the scores from our peers
-    void updatePeerScoresDisplay() {
-        ((TextView) findViewById(R.id.score0)).setText(
-                getString(R.string.score_label, formatScore(mScore)));
-        int[] arr = {
-                R.id.score1, R.id.score2, R.id.score3
-        };
-        int i = 0;
-
-        if (mRoomId != null) {
-            for (Participant p : mParticipants) {
-                String pid = p.getParticipantId();
-                if (pid.equals(mMyId)) {
-                    continue;
-                }
-                if (p.getStatus() != Participant.STATUS_JOINED) {
-                    continue;
-                }
-                int score = mParticipantScore.containsKey(pid) ? mParticipantScore.get(pid) : 0;
-                ((TextView) findViewById(arr[i])).setText(formatScore(score) + " - " +
-                        p.getDisplayName());
-                ++i;
-            }
-        }
-
-        for (; i < arr.length; ++i) {
-            ((TextView) findViewById(arr[i])).setText("");
-        }
-    }
+//    void updatePeerScoresDisplay() {
+//        ((TextView) findViewById(R.id.score0)).setText(
+//                getString(R.string.score_label, formatScore(mScore)));
+//        int[] arr = {
+//                R.id.score1, R.id.score2, R.id.score3
+//        };
+//        int i = 0;
+//
+//        if (mRoomId != null) {
+//            for (Participant p : mParticipants) {
+//                String pid = p.getParticipantId();
+//                if (pid.equals(mMyId)) {
+//                    continue;
+//                }
+//                if (p.getStatus() != Participant.STATUS_JOINED) {
+//                    continue;
+//                }
+//                int score = mParticipantLives.containsKey(pid) ? mParticipantLives.get(pid) : 0;
+//                ((TextView) findViewById(arr[i])).setText(formatScore(score) + " - " +
+//                        p.getDisplayName());
+//                ++i;
+//            }
+//        }
+//
+//        for (; i < arr.length; ++i) {
+//            ((TextView) findViewById(arr[i])).setText("");
+//        }
+//    }
 
     /*
      * MISC SECTION. Miscellaneous methods.
@@ -1374,5 +1503,18 @@ public class Game extends Activity implements
     // Clears the flag that keeps the screen on.
     void stopKeepingScreenOn() {
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
+
+    private class DelayedAck implements Runnable {
+        String sender;
+
+        public DelayedAck(String sender) {
+            this.sender = sender;
+        }
+
+        @Override
+        public void run() {
+            sendCollisionAck(sender);
+        }
     }
 }

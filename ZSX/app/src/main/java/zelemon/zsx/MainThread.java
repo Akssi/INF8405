@@ -6,7 +6,7 @@ import android.view.SurfaceHolder;
 // FROM https://www.youtube.com/watch?v=-XOMJYZmfkw
 
 public class MainThread extends Thread {
-    public static Canvas canvas;
+    private static Canvas canvas;
     private int FPS = 30;
     private double averageFPS;
     private SurfaceHolder surfaceHolder;
@@ -14,7 +14,7 @@ public class MainThread extends Thread {
     private boolean running;
 
 
-    public MainThread(SurfaceHolder surfaceHolder, GamePanel gamePanel) {
+    MainThread(SurfaceHolder surfaceHolder, GamePanel gamePanel) {
         super();
         this.surfaceHolder = surfaceHolder;
         this.gamePanel = gamePanel;
@@ -33,24 +33,7 @@ public class MainThread extends Thread {
             startTime = System.nanoTime();
             canvas = null;
 
-            //try locking the canvas for pixel editing
-            try {
-                canvas = this.surfaceHolder.lockCanvas();
-                synchronized (surfaceHolder) {
-                    this.gamePanel.update();
-                    this.gamePanel.draw(canvas);
-                }
-            } catch (Exception e) {
-            } finally {
-                if (canvas != null) {
-                    try {
-                        surfaceHolder.unlockCanvasAndPost(canvas);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-
+            threadUpdate();
 
             timeMillis = (System.nanoTime() - startTime) / 1000000;
             waitTime = targetTime - timeMillis;
@@ -71,7 +54,39 @@ public class MainThread extends Thread {
         }
     }
 
-    public void setRunning(boolean b) {
+    void setRunning(boolean b) {
         running = b;
+    }
+
+    void runOnce() {
+        if (!threadUpdate()) {
+            threadUpdate();
+        }
+    }
+
+    private boolean threadUpdate() {
+        boolean updated = false;
+        //try locking the canvas for pixel editing
+        try {
+            canvas = this.surfaceHolder.lockCanvas();
+            if (canvas != null) {
+                synchronized (surfaceHolder) {
+                    this.gamePanel.update();
+                    this.gamePanel.draw(canvas);
+                }
+            }
+            updated = true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (canvas != null) {
+                try {
+                    surfaceHolder.unlockCanvasAndPost(canvas);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return updated;
     }
 }

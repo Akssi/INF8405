@@ -15,6 +15,7 @@
 -->
 
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -121,46 +122,61 @@
     </LinearLayout>
 
     <!-- GAMEPLAY SCREEN -->
-    <LinearLayout
+    <android.support.constraint.ConstraintLayout
         android:id="@+id/screen_game"
-        style="@style/LLScreen">
+        style="@style/LLScreen"
+        android:padding="0dp"
+        android:visibility="visible">
+
+
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@android:color/black"
+            android:scaleType="fitXY"
+            android:visibility="visible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <SurfaceView
+            android:id="@+id/game_panel"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_margin="8dp"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintDimensionRatio="9:13"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.6"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="1.0">
+
+        </SurfaceView>
 
         <TextView
-            android:id="@+id/instructions"
-            style="@style/Instructions"
-            android:text="@string/instructions" />
+            android:id="@+id/start_countdown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:text="@string/start_countdown_label"
+            android:textColor="@android:color/white"
+            android:visibility="visible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.502"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.301" />
 
-        <TextView
-            android:id="@+id/my_score"
-            style="@style/ScoreDisplay" />
-
-        <Button
-            android:id="@+id/button_click_me"
-            style="@style/GameButton"
-            android:layout_marginBottom="20dp"
-            android:text="@string/click_me" />
-
-        <TextView
-            android:id="@+id/countdown"
-            style="@style/FigureLabel" />
-
-        <LinearLayout style="@style/ScoresBox">
-
-            <TextView
-                android:id="@+id/score0"
-                style="@style/ScoreText" />
-
-            <TextView
-                android:id="@+id/score1"
-                style="@style/ScoreText" />
-
-            <TextView
-                android:id="@+id/score2"
-                style="@style/ScoreText" />
-
-            <TextView
-                android:id="@+id/score3"
-                style="@style/ScoreText" />
-        </LinearLayout>
-    </LinearLayout>
+    </android.support.constraint.ConstraintLayout>
 </FrameLayout>

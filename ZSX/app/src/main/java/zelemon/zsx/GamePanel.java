@@ -5,8 +5,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Point;
-import android.graphics.Rect;
-import android.renderscript.Float2;
+import android.renderscript.Int2;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -18,44 +17,42 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     private MainThread thread;
     private Player player;
     private Game game;
+    private boolean isRunning;
 
     @SuppressLint("ClickableViewAccessibility")
-    public GamePanel(Context context) {
+    public GamePanel(Context context, Int2 gridSize, Int2 playerPosition) {
         super(context);
         game = (Game) context;
+        setId(R.id.game_panel);
 
 
-        //add the callback to the surfaceholder to intercept events
+        //add the callback to the surface holder to intercept events
         getHolder().addCallback(this);
 
         thread = new MainThread(getHolder(), this);
-        this.player = new Player(new Rect(0, 100, 100, 0), game.playerColor, new Float2(0.5f, 0.5f));
+        this.player = new Player(game.playerColor, playerPosition, gridSize);
         this.setOnTouchListener(new OnSwipeTouchListener(context) {
             @Override
             public void onSwipeLeft() {
-                System.out.println("Swipe left in game panel");
-                StringBuilder sb = new StringBuilder();
-                sb.append("Enemy number: ");
-                sb.append(game.mParticipantEnemy.size());
-                Log.v("ZSX", sb.toString());
+//                System.out.println("Swipe left in game panel");
                 player.updateDirection(new Point(-1, 0));
             }
 
             @Override
             public void onSwipeRight() {
-                System.out.println("Swipe right in game panel");
+//                System.out.println("Swipe right in game panel");
                 player.updateDirection(new Point(1, 0));
             }
 
             @Override
             public void onSwipeUp() {
-                System.out.println("Swipe up in game panel");
+//                System.out.println("Swipe up in game panel");
                 player.updateDirection(new Point(0, -1));
             }
 
             @Override
             public void onSwipeDown() {
-                System.out.println("Swipe down in game panel");
+//                System.out.println("Swipe down in game panel");
                 player.updateDirection(new Point(0, 1));
             }
         });
@@ -64,8 +61,24 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
         setFocusable(true);
     }
 
+    public void stopGameUpdate() {
+        if (isRunning) {
+            stopThread();
+            isRunning = false;
+//            thread.runOnce();
+            Log.i("ZSX", "Game loop stopped");
+        }
+    }
+
+    private void stopThread() {
+        thread.setRunning(false);
+        thread.interrupt();
+    }
+
+
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+
         player.updateScreenDim(new Point(width, height));
         for (Enemy e : game.mParticipantEnemy.values()) {
             e.updateScreenDim(new Point(width, height));
@@ -73,7 +86,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
         StringBuilder sb = new StringBuilder();
         sb.append("Width: ");
         sb.append(width);
-        sb.append("Height: ");
+        sb.append(" Height: ");
         sb.append(height);
         Log.i("ZSX", sb.toString());
     }
@@ -82,13 +95,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     public void surfaceDestroyed(SurfaceHolder holder) {
         boolean retry = true;
         while (retry) {
-            try {
-                thread.setRunning(false);
-                thread.join();
-
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            stopThread();
             retry = false;
         }
 
@@ -96,26 +103,50 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-
-        //we can safely start the game loop
-        thread.setRunning(true);
-        thread.start();
+        int width = getWidth();
+        int height = getHeight();
+        StringBuilder sb = new StringBuilder();
+        sb.append("Surface created: Width: ");
+        sb.append(width);
+        sb.append(" Height: ");
+        sb.append(height);
+        Log.i("ZSX", sb.toString());
+        player.updateScreenDim(new Point(width, height));
+        for (Enemy e : game.mParticipantEnemy.values()) {
+            e.updateScreenDim(new Point(width, height));
+        }
+        thread.runOnce();
     }
 
     public void update() {
         player.update();
         for (Enemy enemy : game.mParticipantEnemy.values()) {
             enemy.update();
+            if (player.getPlayerPosition().x == enemy.getEnemyPosition().x && player.getPlayerPosition().y == enemy.getEnemyPosition().y) {
+                // Collision
+                game.broadcastCollision();
+                stopGameUpdate();
+            }
+
         }
         game.broadcastPosition(player);
     }
 
     public void draw(Canvas canvas) {
         super.draw(canvas);
-        canvas.drawColor(Color.WHITE);
+        canvas.drawColor(Color.DKGRAY);
         player.draw(canvas);
         for (Enemy enemy : game.mParticipantEnemy.values()) {
             enemy.draw(canvas);
+        }
+    }
+
+    public void startGameUpdate() {
+        if (!isRunning) {
+            //we can safely start the game loop
+            thread.setRunning(true);
+            thread.start();
+            isRunning = true;
         }
     }
 }
