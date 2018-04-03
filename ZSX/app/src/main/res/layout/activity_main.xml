@@ -91,6 +91,15 @@
             android:text="@string/see_map_explanation" />
 
         <Button
+            android:id="@+id/button_see_profile"
+            style="@style/MainScreenButton"
+            android:text="@string/see_profile" />
+
+        <TextView
+            style="@style/MainScreenButtonBlurb"
+            android:text="@string/see_profile_explanation" />
+
+        <Button
             android:id="@+id/button_sign_out"
             style="@style/SignOutButton"
             android:text="@string/sign_out" />

@@ -15,6 +15,7 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="zelemon.zsx">
+
     <!--
          The ACCESS_COARSE/FINE_LOCATION permissions are not required to use
          Google Maps Android API v2, but you must specify either coarse or fine
@@ -59,11 +60,12 @@
             android:value="@string/google_maps_key" />
 
         <activity
-                android:name=".MapsActivity"
-                android:label="@string/title_activity_maps">
-
-        </activity>
-        <activity android:name=".battery.StatusActivity"/>
+            android:name=".MapsActivity"
+            android:label="@string/title_activity_maps"></activity>
+        <activity android:name=".battery.StatusActivity" />
+        <activity
+            android:name=".ProfileActivity"
+            android:label="@string/title_activity_profile"></activity>
     </application>
 
 </manifest>
