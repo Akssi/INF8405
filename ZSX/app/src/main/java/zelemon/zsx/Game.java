@@ -112,8 +112,8 @@ public class Game extends AppCompatActivity implements
     // This array lists everything that's clickable, so we can install click
     // event handlers.
     final static int[] CLICKABLES = {
-            R.id.button_accept_popup_invitation, R.id.button_invite_players,
-            R.id.button_quick_game, R.id.button_see_invitations, R.id.button_sign_in,
+            R.id.button_accept_popup_invitation, /*R.id.button_invite_players,*/
+            R.id.button_quick_game, /*R.id.button_see_invitations,*/ R.id.button_sign_in,
             R.id.button_sign_out, R.id.button_single_player,
             R.id.button_single_player_2, R.id.button_see_map, R.id.button_see_profile
     };
@@ -573,7 +573,7 @@ public class Game extends AppCompatActivity implements
                 signOut();
                 switchToScreen(R.id.screen_sign_in);
                 break;
-            case R.id.button_invite_players:
+            /*case R.id.button_invite_players:
                 switchToScreen(R.id.screen_wait);
 
                 // show list of invitable players
@@ -598,7 +598,7 @@ public class Game extends AppCompatActivity implements
                             }
                         }
                 ).addOnFailureListener(createFailureListener("There was a problem getting the inbox."));
-                break;
+                break;*/
             case R.id.button_accept_popup_invitation:
                 // user wants to accept the invitation shown on the invitation popup
                 // (the one we got through the OnInvitationReceivedListener).
