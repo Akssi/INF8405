@@ -9,6 +9,7 @@ import android.os.CountDownTimer;
 import android.renderscript.Int2;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -81,7 +82,7 @@ import java.util.Set;
  *
  * @author Bruno Oliveira (btco), 2013-04-26
  */
-public class Game extends Activity implements
+public class Game extends AppCompatActivity implements
         View.OnClickListener {
 
 
