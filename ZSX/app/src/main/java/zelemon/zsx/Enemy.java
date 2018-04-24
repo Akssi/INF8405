@@ -9,10 +9,11 @@ import android.renderscript.Int2;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static android.support.v4.math.MathUtils.clamp;
+import static java.lang.Math.max;
 import static java.lang.Math.min;
-import static java.lang.StrictMath.max;
 
 /**
  * Created by youri on 2018-03-08.
@@ -35,8 +36,9 @@ public class Enemy implements GameObject {
         this.enemyPosition = enemyPosition;
         this.enemySprite = new Rect(0, 1, 0, 1);
         this.gridSize = gridSize;
-        this.trail = new ArrayList<>();
-        this.trailPos = new ArrayList<>();
+        this.trail = new CopyOnWriteArrayList<>();
+        this.trailPos = new CopyOnWriteArrayList<>();
+        this.pixelPerSquare = new Float2(1, 1);
     }
 
     @Override
@@ -46,8 +48,10 @@ public class Enemy implements GameObject {
         canvas.drawRect(enemySprite, paint);
 
         paint.setAlpha(50);
-        for(Rect rect : trail)
-            canvas.drawRect(rect, paint);
+
+        //for(Rect rect : trail)
+        for (int i = 0; i < trail.size(); i++)
+            canvas.drawRect(trail.get(i), paint);
     }
 
     @Override

@@ -1399,6 +1399,10 @@ public class Game extends AppCompatActivity implements
             // it's an interim score notification, so we can use unreliable
             mRealTimeMultiplayerClient.sendUnreliableMessage(Arrays.copyOfRange(mMsgBuf, 0, 9), mRoomId,
                     p.getParticipantId());
+//            mRealTimeMultiplayerClient.sendUnreliableMessage(Arrays.copyOfRange(mMsgBuf, 0, 9), mRoomId,
+//                    p.getParticipantId());
+//            mRealTimeMultiplayerClient.sendUnreliableMessage(Arrays.copyOfRange(mMsgBuf, 0, 9), mRoomId,
+//                    p.getParticipantId());
         }
     }
 
