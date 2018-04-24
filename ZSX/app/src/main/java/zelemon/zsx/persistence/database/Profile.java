@@ -1,6 +1,7 @@
 package zelemon.zsx.persistence.database;
 
 import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.Ignore;
 import android.location.Location;
 import android.support.annotation.NonNull;
 
@@ -17,9 +18,15 @@ public class Profile implements Serializable {
     private Location location;
     private String picture;
 
-
     public Profile() {
         this.name = "N/A";
+    }
+
+    @Ignore
+    public Profile(@NonNull String name, Location location, String picture) {
+        this.name = name;
+        this.location = location;
+        this.picture = picture;
     }
 
     public Location getLocation() {

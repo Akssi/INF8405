@@ -7,7 +7,7 @@ import android.arch.persistence.room.TypeConverters;
 /**
  * Defines the database instance
  */
-@Database(entities = {Profile.class}, version = 1)
+@Database(entities = {Profile.class}, version = 1, exportSchema = false)
 @TypeConverters({LocationTypeConverter.class})
 public abstract class ProfileDatabase extends RoomDatabase {
     public abstract ProfileDao getProfileDao();

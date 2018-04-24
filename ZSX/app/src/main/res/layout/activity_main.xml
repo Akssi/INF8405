@@ -139,7 +139,7 @@
 
 
         <ImageView
-            android:id="@+id/imageView"
+            android:id="@+id/screen_game_background"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:background="@android:color/black"

@@ -408,6 +408,7 @@ public class Game extends AppCompatActivity implements
             }
         }
     };
+    private ImageView backgroundImage;
 
     public static byte[] intToByteArray(int anInteger) {
         return ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(anInteger).array();
@@ -496,9 +497,9 @@ public class Game extends AppCompatActivity implements
 
         setContentView(R.layout.activity_main);
 
+
         // Create the client used to sign in.
         mGoogleSignInClient = GoogleSignIn.getClient(this, GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN);
-
         // set up a click listener for everything we care about
         for (int id : CLICKABLES) {
             findViewById(id).setOnClickListener(this);
@@ -509,6 +510,7 @@ public class Game extends AppCompatActivity implements
         for (int id : ENEMY_LIVES) {
             mEnemyLives.add(findViewById(id));
         }
+        backgroundImage = findViewById(R.id.screen_game_background);
 
         switchToMainScreen();
         checkPlaceholderIds();
@@ -635,6 +637,7 @@ public class Game extends AppCompatActivity implements
             case R.id.button_see_profile:
                 //switchToScreen(R.id.screen_wait);
                 Intent profileIntent = new Intent(this, ProfileActivity.class);
+                profileIntent.putExtra("signedInAccount", mSignedInAccount);
                 startActivity(profileIntent);
                 break;
         }
@@ -1225,6 +1228,9 @@ public class Game extends AppCompatActivity implements
         randomColor[2] = 1.0f;
         int color = Color.HSVToColor(randomColor);
         playerColor = color;
+
+        backgroundImage.setBackgroundColor(playerColor);
+
 
         mMsgBuf[0] = (byte) 'I';
 
