@@ -36,24 +36,28 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
             public void onSwipeLeft() {
 //                System.out.println("Swipe left in game panel");
                 player.updateDirection(new Point(-1, 0));
+                //game.broadcastTurnReliable(player);
             }
 
             @Override
             public void onSwipeRight() {
 //                System.out.println("Swipe right in game panel");
                 player.updateDirection(new Point(1, 0));
+                //game.broadcastTurnReliable(player);
             }
 
             @Override
             public void onSwipeUp() {
 //                System.out.println("Swipe up in game panel");
                 player.updateDirection(new Point(0, -1));
+                //game.broadcastTurnReliable(player);
             }
 
             @Override
             public void onSwipeDown() {
 //                System.out.println("Swipe down in game panel");
                 player.updateDirection(new Point(0, 1));
+                //game.broadcastTurnReliable(player);
             }
         });
 
@@ -125,10 +129,13 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
         player.update();
         for (Enemy enemy : game.mParticipantEnemy.values()) {
             enemy.update();
-            for(Int2 pos : enemy.getTrailPos()){
+            for (int i = 0; i < enemy.getTrailPos().size(); i++) {
+                Int2 pos = enemy.getTrailPos().get(i);
+
                 if(player.getPlayerPosition().x == pos.x && player.getPlayerPosition().y == pos.y)
                 {
                     // Collision
+                    Log.i("ZSX", "COLLISION with enemy");
                     game.broadcastCollision();
                     stopGameUpdate();
                     break;
@@ -143,25 +150,23 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
 
         }
 
-        //for(Int2 pos : player.getTrailPos()){
-        if(player.getTrailPos().size() > 2)
-            for(int i = 0; i < player.getTrailPos().size()-2; i++){
-                Int2 pos = player.getTrailPos().get(i);
-                if(player.getPlayerPosition().x == pos.x && player.getPlayerPosition().y == pos.y)
-                {
-                    Log.i("ZSX", "COLLISION");
-                    // Collision
-                    game.broadcastCollision();
-                    stopGameUpdate();
-                    break;
-                }
+        for (int i = 0; i < player.getTrailPos().size(); i++) {
+            Int2 pos = player.getTrailPos().get(i);
+            if (player.getPlayerPosition().x == pos.x && player.getPlayerPosition().y == pos.y) {
+                // Collision
+                Log.i("ZSX", "COLLISION with self");
+                game.broadcastCollision();
+                stopGameUpdate();
+                break;
             }
+        }
 
         game.broadcastPosition(player);
     }
 
     public void draw(Canvas canvas) {
         super.draw(canvas);
+
         canvas.drawColor(Color.DKGRAY);
         player.draw(canvas);
         for (Enemy enemy : game.mParticipantEnemy.values()) {

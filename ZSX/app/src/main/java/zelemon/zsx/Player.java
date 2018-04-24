@@ -20,14 +20,13 @@ public class Player implements GameObject {
 
     private Rect playerSprite;
     private int playerColor;
-    private float speed = 0.005f;
-    private Point screenSize = new Point(1440, 2560);
     private List<Rect> trail;
     private List<Int2> trailPos;
     private Int2 playerPosition;
     private Point direction = new Point(1, 0);
     private Int2 gridSize;
     private Float2 pixelPerSquare;
+    private boolean inCollision = false;
 
     public Player(int playerColor, Int2 playerPosition, Int2 gridSize) {
         this.playerSprite = new Rect(0, 1, 0, 1);
@@ -74,24 +73,21 @@ public class Player implements GameObject {
 
     @Override
     public void update() {
+        if (direction.x != 0 || direction.y != 0) {
+            trail.add(new Rect(playerSprite));
+            trailPos.add(new Int2(playerPosition.x, playerPosition.y));
+        }
+
+        // Update player pos
         playerPosition.x += direction.x;
         playerPosition.y += direction.y;
-        Int2 newPlayerPosition = new Int2(clamp(playerPosition.x, 0, gridSize.x - 1),
+        playerPosition = new Int2(clamp(playerPosition.x, 0, gridSize.x - 1),
                 clamp(playerPosition.y, 0, gridSize.y - 1));
-        if (newPlayerPosition != playerPosition) {
-            playerPosition = newPlayerPosition;
-        }
 
         playerSprite = new Rect((int) (playerPosition.x * pixelPerSquare.x),
                 (int) (playerPosition.y * pixelPerSquare.y),
                 (int) ((playerPosition.x + 1) * pixelPerSquare.x),
                 (int) ((playerPosition.y + 1) * pixelPerSquare.y));
-
-        if(trail.isEmpty() || !trail.get(trail.size()-1).contains((int) ((playerPosition.x + 0.5) * pixelPerSquare.x), (int) ((playerPosition.y + 0.5) * pixelPerSquare.y)))
-        {
-            trail.add(playerSprite);
-            trailPos.add(playerPosition);
-        }
     }
 
     public void updateDirection(Point direction) {
@@ -113,5 +109,13 @@ public class Player implements GameObject {
 
     public List<Int2> getTrailPos(){
         return this.trailPos;
+    }
+
+    public boolean IsInCollision() {
+        return this.inCollision;
+    }
+
+    public void SetInCollision(boolean value) {
+        this.inCollision = value;
     }
 }

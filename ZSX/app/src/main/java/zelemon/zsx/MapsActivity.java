@@ -1,14 +1,20 @@
 package zelemon.zsx;
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.widget.Toast;
+
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -16,21 +22,44 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import dagger.android.support.DaggerAppCompatActivity;
-import zelemon.zsx.dependencyInjection.TronViewModelFactory;
+import com.google.maps.android.clustering.Cluster;
+import com.google.maps.android.clustering.ClusterManager;
+
+import java.util.List;
 
 import javax.inject.Inject;
 
-public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
+import dagger.android.support.DaggerAppCompatActivity;
+import zelemon.zsx.Fragments.CardFragment;
+import zelemon.zsx.dependencyInjection.TronViewModelFactory;
+import zelemon.zsx.persistence.database.Profile;
+
+public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener,ClusterManager.OnClusterClickListener<PlayerMarker> {
 
     private static final int PERMISSION_REQUEST_LOCATION = 0;
     private GoogleMap mMap;
+    private LiveData<List<Profile>> mProfiles;
     private LatLng currentCoordinates;
     private TronViewModel tronViewModel;
+    private Location markerLocation = new Location(LocationManager.GPS_PROVIDER);
+    private final Observer<List<Profile>> profileCardObserver = this::showProfilesOnCard;
     @Inject
     TronViewModelFactory viewModelFactory;
 
     private final Observer<Location> locationObserver = this::updateCurrentLocationOnMap;
+    // From StackOverflow : https://stackoverflow.com/questions/837872/calculate-distance-in-meters-when-you-know-longitude-and-latitude-in-java
+    private static float distFrom(float lat1, float lng1, float lat2, float lng2) {
+        double earthRadius = 6371000; //meters
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLng = Math.toRadians(lng2 - lng1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        float dist = (float) (earthRadius * c);
+
+        return dist;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,6 +112,45 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         mMap.setOnMarkerClickListener(this);
     }
 
+    /**
+     * This function is called when a marker is clicked.
+     * It queries the database for players to ultimately show them to the user.
+     * @param marker The marker that was clicked on.
+     * @return true if the listener has consumed the event (i.e., the default behavior should not occur); false otherwise
+     */
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        this.markerLocation.setLatitude(marker.getPosition().latitude);
+        this.markerLocation.setLongitude(marker.getPosition().longitude);
+        mProfiles = tronViewModel.getProfilesSurroundingLocation(this.markerLocation);
+        mProfiles.observe(this, this.profileCardObserver);
+        return true;
+    }
+
+    /**
+     * This function is called when a cluster is clicked.
+     * It queries the database for players to ultimately show them to the user.
+     * @param cluster The cluster that was clicked on.
+     * @return true if the listener has consumed the event (i.e., the default behavior should not occur); false otherwise
+     */
+    @Override
+    public boolean onClusterClick(Cluster<PlayerMarker> cluster) {
+        LatLng clusterPos = cluster.getPosition();
+        double radius = 0;
+        for (PlayerMarker marker : cluster.getItems()) {
+            LatLng markerPos = marker.getPosition();
+            float distance = distFrom((float) markerPos.latitude, (float) markerPos.longitude, (float) clusterPos.latitude, (float) clusterPos.longitude);
+            if (distance > radius) {
+                radius = distance;
+            }
+        }
+        this.markerLocation.setLatitude(cluster.getPosition().latitude);
+        this.markerLocation.setLongitude(cluster.getPosition().longitude);
+        mProfiles = tronViewModel.getProfilesSurroundingLocation(this.markerLocation, (int)radius);
+        mProfiles.observe(this, this.profileCardObserver);
+        return true;
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -95,9 +163,38 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         }
     }
 
-    @Override
-    public boolean onMarkerClick(Marker marker) {
-        // Show card with user picture
-        return false;
+
+    /**
+     * Opens a card containing the list of wifi on the marker/cluster selected
+     */
+    private void showProfilesOnCard(List<Profile> profileList) {
+
+        if(profileList.size() > 1){
+
+            // setup the alert builder
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(getResources().getString(R.string.player_profile_title));
+            String[] profileNames = new String[profileList.size()];
+            for(int i = 0; i < profileList.size(); i++)
+                profileNames[i] = profileList.get(i).getName();
+
+            // add a list
+            builder.setItems(profileNames, (DialogInterface dialog, int index) -> {
+                dialog.cancel();
+                CardFragment cardFragment = CardFragment.newInstance(profileList.get(index));
+                cardFragment.show(getFragmentManager(), "Card fragment");
+            });
+
+            // create and show the alert dialog
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        } else if (!profileList.isEmpty()) {
+            CardFragment cardFragment = CardFragment.newInstance(profileList.get(0));
+            cardFragment.show(getFragmentManager(), "Card fragment");
+        } else {
+            Toast.makeText(this, " No profiles found", Toast.LENGTH_SHORT).show();
+        }
+        mProfiles.removeObserver(this.profileCardObserver);
     }
+
 }

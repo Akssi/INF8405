@@ -9,6 +9,7 @@ import android.os.CountDownTimer;
 import android.renderscript.Int2;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -17,6 +18,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -81,7 +83,7 @@ import java.util.Set;
  *
  * @author Bruno Oliveira (btco), 2013-04-26
  */
-public class Game extends Activity implements
+public class Game extends AppCompatActivity implements
         View.OnClickListener {
 
 
@@ -97,7 +99,7 @@ public class Game extends Activity implements
     */
 
     // Grid size
-    final static Int2 GRID_SIZE = new Int2(90, 160);
+    final static Int2 GRID_SIZE = new Int2(90, 132);
     final static int QuarterX = GRID_SIZE.x / 4;
     final static int MidY = GRID_SIZE.y / 2;
     final static int ThreeQuarterX = 3 * GRID_SIZE.x / 4;
@@ -111,8 +113,8 @@ public class Game extends Activity implements
     // This array lists everything that's clickable, so we can install click
     // event handlers.
     final static int[] CLICKABLES = {
-            R.id.button_accept_popup_invitation, R.id.button_invite_players,
-            R.id.button_quick_game, R.id.button_see_invitations, R.id.button_sign_in,
+            R.id.button_accept_popup_invitation, /*R.id.button_invite_players,*/
+            R.id.button_quick_game, /*R.id.button_see_invitations,*/ R.id.button_sign_in,
             R.id.button_sign_out, R.id.button_single_player,
             R.id.button_single_player_2, R.id.button_see_map, R.id.button_see_profile
     };
@@ -120,6 +122,14 @@ public class Game extends Activity implements
     final static int[] SCREENS = {
             R.id.screen_game, R.id.screen_main, R.id.screen_sign_in,
             R.id.screen_wait
+    };
+
+    final static int[] PLAYER_LIVES = {
+            R.id.life3, R.id.life2, R.id.life1
+    };
+
+    final static int[] ENEMY_LIVES = {
+            R.id.enemy_life3, R.id.enemy_life2, R.id.enemy_life1
     };
     // Request code used to invoke sign in user interactions.
     private static final int RC_SIGN_IN = 9001;
@@ -155,6 +165,9 @@ public class Game extends Activity implements
     int mCurScreen = -1;
     private boolean isRestarting;
     private TextView mStartGameCountdown;
+    private ArrayList<ImageView> mPLayerLives = new ArrayList<>();
+    private ArrayList<ImageView> mEnemyLives = new ArrayList<>();
+
     private boolean gameReady;
     // Client used to sign in with Google APIs
     private GoogleSignInClient mGoogleSignInClient = null;
@@ -343,7 +356,7 @@ public class Game extends Activity implements
                 Log.i("COMM", "COLLISION message received");
                 Log.i("COMM", "\tfrom " + sender);
                 mFinishedParticipants.add(sender);
-//                mParticipantLives.put(sender, mParticipantLives.get(sender)-1);
+                mParticipantLives.put(sender, mParticipantLives.get(sender) - 1);
                 // update the scores on the screen
 //                updatePeerScoresDisplay();
 
@@ -490,6 +503,12 @@ public class Game extends Activity implements
         for (int id : CLICKABLES) {
             findViewById(id).setOnClickListener(this);
         }
+        for (int id : PLAYER_LIVES) {
+            mPLayerLives.add(findViewById(id));
+        }
+        for (int id : ENEMY_LIVES) {
+            mEnemyLives.add(findViewById(id));
+        }
 
         switchToMainScreen();
         checkPlaceholderIds();
@@ -572,7 +591,7 @@ public class Game extends Activity implements
                 signOut();
                 switchToScreen(R.id.screen_sign_in);
                 break;
-            case R.id.button_invite_players:
+            /*case R.id.button_invite_players:
                 switchToScreen(R.id.screen_wait);
 
                 // show list of invitable players
@@ -597,7 +616,7 @@ public class Game extends Activity implements
                             }
                         }
                 ).addOnFailureListener(createFailureListener("There was a problem getting the inbox."));
-                break;
+                break;*/
             case R.id.button_accept_popup_invitation:
                 // user wants to accept the invitation shown on the invitation popup
                 // (the one we got through the OnInvitationReceivedListener).
@@ -1091,9 +1110,9 @@ public class Game extends Activity implements
             });
             for (int i = 0; i < mParticipants.size(); i++) {
                 Participant participant = mParticipants.get(i);
+                mParticipantLives.put(participant.getParticipantId(), 3);
                 if (participant.getParticipantId().equals(mMyId)) {
                     mParticipantIndex = i;
-                    break;
                 }
             }
             if (mParticipantIndex == 0) {
@@ -1112,6 +1131,9 @@ public class Game extends Activity implements
         } else {
             for (int i = 0; i < mParticipants.size(); i++) {
                 Participant participant = mParticipants.get(i);
+                if (mParticipantLives.get(participant.getParticipantId()) <= 0) {
+                    switchToMainScreen();
+                }
                 if (i != mParticipantIndex) {
                     Enemy enemy = mParticipantEnemy.get(participant.getParticipantId());
                     enemy.setEnemyPosition(getInitialPosition(i));
@@ -1151,11 +1173,23 @@ public class Game extends Activity implements
         Int2 playerPosition = new Int2(GRID_SIZE.x / 2, GRID_SIZE.y / 2);
         if (multiplayer) {
             playerPosition = getInitialPosition(mParticipantIndex);
+
+            for (int i = 0; i < 3; i++) {
+                if (i > mParticipantLives.get(mParticipants.get(mParticipantIndex).getParticipantId()))
+                    mPLayerLives.get(i).setVisibility(View.GONE);
+                else
+                    mPLayerLives.get(i).setVisibility(View.VISIBLE);
+                for (Participant participant : mParticipants) {
+                    if (i > mParticipantLives.get(participant.getParticipantId()))
+                        mEnemyLives.get(i).setVisibility(View.GONE);
+                    else
+                        mEnemyLives.get(i).setVisibility(View.VISIBLE);
+                }
+            }
         }
         mGamePanel = new GamePanel(this, GRID_SIZE, playerPosition);
         gameScreen.addView(mGamePanel, params);
         gameScreen.addView(mStartGameCountdown, textViewParam);
-//        findViewById(R.id.background_image_view).setBackgroundColor(Color.CYAN);
         switchToScreen(R.id.screen_game);
 
         mStartGameCountdown.setVisibility(View.VISIBLE);
@@ -1267,6 +1301,7 @@ public class Game extends Activity implements
         msgCollBuf[0] = (byte) 'C';
         isWaitingCollisionAck = true;
         mFinishedParticipants.add(mPlayerId);
+        mParticipantLives.put(mParticipants.get(mParticipantIndex).getParticipantId(), mParticipantLives.get(mParticipants.get(mParticipantIndex).getParticipantId()) - 1);
         // Send to every other participant.
         for (Participant p : mParticipants) {
             if (p.getParticipantId().equals(mMyId)) {
@@ -1364,6 +1399,58 @@ public class Game extends Activity implements
             // it's an interim score notification, so we can use unreliable
             mRealTimeMultiplayerClient.sendUnreliableMessage(Arrays.copyOfRange(mMsgBuf, 0, 9), mRoomId,
                     p.getParticipantId());
+//            mRealTimeMultiplayerClient.sendUnreliableMessage(Arrays.copyOfRange(mMsgBuf, 0, 9), mRoomId,
+//                    p.getParticipantId());
+//            mRealTimeMultiplayerClient.sendUnreliableMessage(Arrays.copyOfRange(mMsgBuf, 0, 9), mRoomId,
+//                    p.getParticipantId());
+        }
+    }
+
+    public void broadcastTurnReliable(Player player) {
+        if (!mMultiplayer) {
+            // playing single-player mode
+            return;
+        }
+
+        // First byte in message indicates position update
+        mMsgBuf[0] = (byte) 'P';
+        // Then we send int pos as 4 bytes
+        byte[] playerPosX = intToByteArray(player.getPlayerPosition().x);
+        mMsgBuf[1] = playerPosX[0];
+        mMsgBuf[2] = playerPosX[1];
+        mMsgBuf[3] = playerPosX[2];
+        mMsgBuf[4] = playerPosX[3];
+        byte[] playerPosY = intToByteArray(player.getPlayerPosition().y);
+        mMsgBuf[5] = playerPosY[0];
+        mMsgBuf[6] = playerPosY[1];
+        mMsgBuf[7] = playerPosY[2];
+        mMsgBuf[8] = playerPosY[3];
+
+        // Send to every other participant.
+        for (Participant p : mParticipants) {
+            if (p.getParticipantId().equals(mMyId)) {
+                continue;
+            }
+            if (p.getStatus() != Participant.STATUS_JOINED) {
+                continue;
+            }
+            // it's an interim score notification, so we can use unreliable
+            mRealTimeMultiplayerClient.sendReliableMessage(Arrays.copyOfRange(mMsgBuf, 0, 9),
+                    mRoomId, p.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
+                        @Override
+                        public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
+                            Log.d("COMM", "POSITION RELIABLE message sent");
+//                            Log.d(TAG, "  statusCode: " + statusCode);
+//                            Log.d(TAG, "  tokenId: " + tokenId);
+                            Log.d("COMM", "  recipientParticipantId: " + recipientParticipantId);
+                        }
+                    })
+                    .addOnSuccessListener(new OnSuccessListener<Integer>() {
+                        @Override
+                        public void onSuccess(Integer tokenId) {
+                            Log.d("COMM", "POSITION RELIABLE message with tokenId: " + tokenId);
+                        }
+                    });
         }
     }
 
