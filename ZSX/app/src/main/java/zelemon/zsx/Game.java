@@ -98,7 +98,7 @@ public class Game extends AppCompatActivity implements
     */
 
     // Grid size
-    final static Int2 GRID_SIZE = new Int2(90, 160);
+    final static Int2 GRID_SIZE = new Int2(90, 132);
     final static int QuarterX = GRID_SIZE.x / 4;
     final static int MidY = GRID_SIZE.y / 2;
     final static int ThreeQuarterX = 3 * GRID_SIZE.x / 4;
@@ -1365,6 +1365,54 @@ public class Game extends AppCompatActivity implements
             // it's an interim score notification, so we can use unreliable
             mRealTimeMultiplayerClient.sendUnreliableMessage(Arrays.copyOfRange(mMsgBuf, 0, 9), mRoomId,
                     p.getParticipantId());
+        }
+    }
+
+    public void broadcastTurnReliable(Player player) {
+        if (!mMultiplayer) {
+            // playing single-player mode
+            return;
+        }
+
+        // First byte in message indicates position update
+        mMsgBuf[0] = (byte) 'P';
+        // Then we send int pos as 4 bytes
+        byte[] playerPosX = intToByteArray(player.getPlayerPosition().x);
+        mMsgBuf[1] = playerPosX[0];
+        mMsgBuf[2] = playerPosX[1];
+        mMsgBuf[3] = playerPosX[2];
+        mMsgBuf[4] = playerPosX[3];
+        byte[] playerPosY = intToByteArray(player.getPlayerPosition().y);
+        mMsgBuf[5] = playerPosY[0];
+        mMsgBuf[6] = playerPosY[1];
+        mMsgBuf[7] = playerPosY[2];
+        mMsgBuf[8] = playerPosY[3];
+
+        // Send to every other participant.
+        for (Participant p : mParticipants) {
+            if (p.getParticipantId().equals(mMyId)) {
+                continue;
+            }
+            if (p.getStatus() != Participant.STATUS_JOINED) {
+                continue;
+            }
+            // it's an interim score notification, so we can use unreliable
+            mRealTimeMultiplayerClient.sendReliableMessage(Arrays.copyOfRange(mMsgBuf, 0, 9),
+                    mRoomId, p.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
+                        @Override
+                        public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
+                            Log.d("COMM", "POSITION RELIABLE message sent");
+//                            Log.d(TAG, "  statusCode: " + statusCode);
+//                            Log.d(TAG, "  tokenId: " + tokenId);
+                            Log.d("COMM", "  recipientParticipantId: " + recipientParticipantId);
+                        }
+                    })
+                    .addOnSuccessListener(new OnSuccessListener<Integer>() {
+                        @Override
+                        public void onSuccess(Integer tokenId) {
+                            Log.d("COMM", "POSITION RELIABLE message with tokenId: " + tokenId);
+                        }
+                    });
         }
     }
 

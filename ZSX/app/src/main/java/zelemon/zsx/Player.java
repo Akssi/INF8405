@@ -20,8 +20,6 @@ public class Player implements GameObject {
 
     private Rect playerSprite;
     private int playerColor;
-    private float speed = 0.005f;
-    private Point screenSize = new Point(1440, 2560);
     private List<Rect> trail;
     private List<Int2> trailPos;
     private Int2 playerPosition;
@@ -76,27 +74,15 @@ public class Player implements GameObject {
     @Override
     public void update() {
         if (direction.x != 0 || direction.y != 0) {
-            // Add old position to trail
-            if (!trail.isEmpty()) {
-                Int2 lastTrailPos = trailPos.get(trailPos.size() - 1);
-                if (lastTrailPos.x != playerPosition.x || lastTrailPos.y != playerPosition.y) {
-                    trail.add(new Rect(playerSprite));
-                    trailPos.add(new Int2(playerPosition.x, playerPosition.y));
-                }
-            } else {
-                trail.add(new Rect(playerSprite));
-                trailPos.add(new Int2(playerPosition.x, playerPosition.y));
-            }
+            trail.add(new Rect(playerSprite));
+            trailPos.add(new Int2(playerPosition.x, playerPosition.y));
         }
 
         // Update player pos
         playerPosition.x += direction.x;
         playerPosition.y += direction.y;
-        Int2 newPlayerPosition = new Int2(clamp(playerPosition.x, 0, gridSize.x - 1),
+        playerPosition = new Int2(clamp(playerPosition.x, 0, gridSize.x - 1),
                 clamp(playerPosition.y, 0, gridSize.y - 1));
-        if (newPlayerPosition != playerPosition) {
-            playerPosition = newPlayerPosition;
-        }
 
         playerSprite = new Rect((int) (playerPosition.x * pixelPerSquare.x),
                 (int) (playerPosition.y * pixelPerSquare.y),

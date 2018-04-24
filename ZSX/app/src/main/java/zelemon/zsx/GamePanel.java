@@ -36,24 +36,28 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
             public void onSwipeLeft() {
 //                System.out.println("Swipe left in game panel");
                 player.updateDirection(new Point(-1, 0));
+                //game.broadcastTurnReliable(player);
             }
 
             @Override
             public void onSwipeRight() {
 //                System.out.println("Swipe right in game panel");
                 player.updateDirection(new Point(1, 0));
+                //game.broadcastTurnReliable(player);
             }
 
             @Override
             public void onSwipeUp() {
 //                System.out.println("Swipe up in game panel");
                 player.updateDirection(new Point(0, -1));
+                //game.broadcastTurnReliable(player);
             }
 
             @Override
             public void onSwipeDown() {
 //                System.out.println("Swipe down in game panel");
                 player.updateDirection(new Point(0, 1));
+                //game.broadcastTurnReliable(player);
             }
         });
 
@@ -161,6 +165,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
 
     public void draw(Canvas canvas) {
         super.draw(canvas);
+
         canvas.drawColor(Color.DKGRAY);
         player.draw(canvas);
         for (Enemy enemy : game.mParticipantEnemy.values()) {
