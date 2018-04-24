@@ -1135,7 +1135,8 @@ public class Game extends AppCompatActivity implements
             for (int i = 0; i < mParticipants.size(); i++) {
                 Participant participant = mParticipants.get(i);
                 if (mParticipantLives.get(participant.getParticipantId()) <= 0) {
-                    finish();
+                    this.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
+                    this.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BACK));
                 }
                 if (i != mParticipantIndex) {
                     Enemy enemy = mParticipantEnemy.get(participant.getParticipantId());
@@ -1408,10 +1409,6 @@ public class Game extends AppCompatActivity implements
             // it's an interim score notification, so we can use unreliable
             mRealTimeMultiplayerClient.sendUnreliableMessage(Arrays.copyOfRange(mMsgBuf, 0, 9), mRoomId,
                     p.getParticipantId());
-//            mRealTimeMultiplayerClient.sendUnreliableMessage(Arrays.copyOfRange(mMsgBuf, 0, 9), mRoomId,
-//                    p.getParticipantId());
-//            mRealTimeMultiplayerClient.sendUnreliableMessage(Arrays.copyOfRange(mMsgBuf, 0, 9), mRoomId,
-//                    p.getParticipantId());
         }
     }
 

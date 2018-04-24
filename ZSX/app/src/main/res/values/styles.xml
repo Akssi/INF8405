@@ -20,7 +20,7 @@
     <color name="PopupColor">@color/AccentColor</color>
     <color name="PopupTextColor">#ffffff</color>
     <color name="ButtonTextColor">#ffffff</color>
-    <color name="BlurbColor">#9e9e9e</color>
+    <color name="BlurbColor">#000000</color>
     <color name="SignOutButtonBackground">#e0e0e0</color>
     <color name="SignOutButtonTextColor">#404040</color>
 
