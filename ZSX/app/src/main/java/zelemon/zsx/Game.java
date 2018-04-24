@@ -18,6 +18,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -122,6 +123,14 @@ public class Game extends AppCompatActivity implements
             R.id.screen_game, R.id.screen_main, R.id.screen_sign_in,
             R.id.screen_wait
     };
+
+    final static int[] PLAYER_LIVES = {
+            R.id.life3, R.id.life2, R.id.life1
+    };
+
+    final static int[] ENEMY_LIVES = {
+            R.id.enemy_life3, R.id.enemy_life2, R.id.enemy_life1
+    };
     // Request code used to invoke sign in user interactions.
     private static final int RC_SIGN_IN = 9001;
     protected int playerColor = Color.CYAN;
@@ -156,6 +165,9 @@ public class Game extends AppCompatActivity implements
     int mCurScreen = -1;
     private boolean isRestarting;
     private TextView mStartGameCountdown;
+    private ArrayList<ImageView> mPLayerLives = new ArrayList<>();
+    private ArrayList<ImageView> mEnemyLives = new ArrayList<>();
+
     private boolean gameReady;
     // Client used to sign in with Google APIs
     private GoogleSignInClient mGoogleSignInClient = null;
@@ -344,7 +356,7 @@ public class Game extends AppCompatActivity implements
                 Log.i("COMM", "COLLISION message received");
                 Log.i("COMM", "\tfrom " + sender);
                 mFinishedParticipants.add(sender);
-//                mParticipantLives.put(sender, mParticipantLives.get(sender)-1);
+                mParticipantLives.put(sender, mParticipantLives.get(sender) - 1);
                 // update the scores on the screen
 //                updatePeerScoresDisplay();
 
@@ -490,6 +502,12 @@ public class Game extends AppCompatActivity implements
         // set up a click listener for everything we care about
         for (int id : CLICKABLES) {
             findViewById(id).setOnClickListener(this);
+        }
+        for (int id : PLAYER_LIVES) {
+            mPLayerLives.add(findViewById(id));
+        }
+        for (int id : ENEMY_LIVES) {
+            mEnemyLives.add(findViewById(id));
         }
 
         switchToMainScreen();
@@ -1092,9 +1110,9 @@ public class Game extends AppCompatActivity implements
             });
             for (int i = 0; i < mParticipants.size(); i++) {
                 Participant participant = mParticipants.get(i);
+                mParticipantLives.put(participant.getParticipantId(), 3);
                 if (participant.getParticipantId().equals(mMyId)) {
                     mParticipantIndex = i;
-                    break;
                 }
             }
             if (mParticipantIndex == 0) {
@@ -1113,6 +1131,9 @@ public class Game extends AppCompatActivity implements
         } else {
             for (int i = 0; i < mParticipants.size(); i++) {
                 Participant participant = mParticipants.get(i);
+                if (mParticipantLives.get(participant.getParticipantId()) <= 0) {
+                    switchToMainScreen();
+                }
                 if (i != mParticipantIndex) {
                     Enemy enemy = mParticipantEnemy.get(participant.getParticipantId());
                     enemy.setEnemyPosition(getInitialPosition(i));
@@ -1152,11 +1173,23 @@ public class Game extends AppCompatActivity implements
         Int2 playerPosition = new Int2(GRID_SIZE.x / 2, GRID_SIZE.y / 2);
         if (multiplayer) {
             playerPosition = getInitialPosition(mParticipantIndex);
+
+            for (int i = 0; i < 3; i++) {
+                if (i > mParticipantLives.get(mParticipants.get(mParticipantIndex).getParticipantId()))
+                    mPLayerLives.get(i).setVisibility(View.GONE);
+                else
+                    mPLayerLives.get(i).setVisibility(View.VISIBLE);
+                for (Participant participant : mParticipants) {
+                    if (i > mParticipantLives.get(participant.getParticipantId()))
+                        mEnemyLives.get(i).setVisibility(View.GONE);
+                    else
+                        mEnemyLives.get(i).setVisibility(View.VISIBLE);
+                }
+            }
         }
         mGamePanel = new GamePanel(this, GRID_SIZE, playerPosition);
         gameScreen.addView(mGamePanel, params);
         gameScreen.addView(mStartGameCountdown, textViewParam);
-//        findViewById(R.id.background_image_view).setBackgroundColor(Color.CYAN);
         switchToScreen(R.id.screen_game);
 
         mStartGameCountdown.setVisibility(View.VISIBLE);
@@ -1268,6 +1301,7 @@ public class Game extends AppCompatActivity implements
         msgCollBuf[0] = (byte) 'C';
         isWaitingCollisionAck = true;
         mFinishedParticipants.add(mPlayerId);
+        mParticipantLives.put(mParticipants.get(mParticipantIndex).getParticipantId(), mParticipantLives.get(mParticipants.get(mParticipantIndex).getParticipantId()) - 1);
         // Send to every other participant.
         for (Participant p : mParticipants) {
             if (p.getParticipantId().equals(mMyId)) {
