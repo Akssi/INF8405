@@ -1,53 +1,86 @@
 package zelemon.zsx;
 
-import android.content.Context;
-import android.content.ContextWrapper;
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProvider;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
-import android.app.Activity;
-import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import dagger.android.support.DaggerAppCompatActivity;
+import zelemon.zsx.persistence.database.PictureTypeConverter;
+import zelemon.zsx.persistence.database.Profile;
 
-
-import java.io.File;
-import java.io.FileInputStream;
+import javax.inject.Inject;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 
-public class ProfileActivity extends Activity {
+public class ProfileActivity extends DaggerAppCompatActivity {
 
-    String NO_PHOTO = "none";
-    ImageView mProfilePhoto;
-    SharedPreferences mSharedPref;
+    @Inject
+    ViewModelProvider.Factory viewModelFactory;
+    private TronViewModel tronViewModel;
+    private ImageView mProfilePhoto;
+    private String currentDisplayName;
+    private Location currentLocation;
+    private final Observer<Location> locationObserver = this::updateCurrentLocationOnMap;
+    private Profile currentProfile;
+    private final Observer<Profile> currentProfileObserver = this::updateCurrentProfile;
+    private LiveData<Profile> currentProfileLiveData;
+
+    private void updateCurrentProfile(Profile profile) {
+        if (profile != null) {
+            currentProfile = profile;
+            loadImageFromDatabase();
+        } else {
+            this.currentProfile = new Profile(currentDisplayName, this.currentLocation, "");
+            this.tronViewModel.saveProfile(this.currentProfile);
+        }
+    }
+
+    private void updateCurrentLocationOnMap(Location location) {
+        this.currentLocation = location;
+    }
+
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+
+        if (account != null) {
+            currentDisplayName = account.getEmail();
+            if (currentDisplayName == null) {
+                currentDisplayName = "Name";
+            }
+        }
+        currentProfileLiveData = tronViewModel.getProfile(currentDisplayName);
+        currentProfileLiveData.observe(this, currentProfileObserver);
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
+        tronViewModel = ViewModelProviders.of(this, viewModelFactory).get(TronViewModel.class);
+        tronViewModel.getLocationLiveData().observe(this, locationObserver);
+
         mProfilePhoto = findViewById(R.id.profile_photo);
         Button choosePhotoButton = findViewById(R.id.button_choose_photo);
-        choosePhotoButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
-                photoPickerIntent.setType("image/*");
-                startActivityForResult(photoPickerIntent, 0);
-            }
+        choosePhotoButton.setOnClickListener(v -> {
+            Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
+            photoPickerIntent.setType("image/*");
+            startActivityForResult(photoPickerIntent, 0);
         });
-
-        mSharedPref = getApplication().getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
-        String photoPath = mSharedPref.getString(getString(R.string.profile_photo_path), NO_PHOTO);
-        if(!photoPath.equals(NO_PHOTO)) {
-            loadImageFromStorage(photoPath);
-        }
     }
 
 
@@ -62,48 +95,21 @@ public class ProfileActivity extends Activity {
                 final InputStream imageStream = getContentResolver().openInputStream(imageUri);
                 final Bitmap selectedImage = BitmapFactory.decodeStream(imageStream);
                 mProfilePhoto.setImageBitmap(selectedImage);
-                String path = saveToInternalStorage(selectedImage);
-                mSharedPref.edit().putString(getString(R.string.profile_photo_path), path).apply();
+                saveToDatabase(selectedImage);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    private String saveToInternalStorage(Bitmap bitmapImage){
-        ContextWrapper cw = new ContextWrapper(getApplicationContext());
-        // path to /data/data/yourapp/app_data/imageDir
-        File directory = cw.getDir("imageDir", Context.MODE_PRIVATE);
-        // Create imageDir
-        File mypath=new File(directory,"profile.jpg");
-
-        FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(mypath);
-            // Use the compress method on the BitMap object to write image to the OutputStream
-            bitmapImage.compress(Bitmap.CompressFormat.PNG, 100, fos);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                fos.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return directory.getAbsolutePath();
+    private void saveToDatabase(Bitmap bitmapImage) {
+        this.currentProfile.setPicture(PictureTypeConverter.toString(bitmapImage));
+        this.tronViewModel.saveProfile(currentProfile);
     }
 
-    private void loadImageFromStorage(String path)
-    {
-        try {
-            File f=new File(path, "profile.jpg");
-            Bitmap b = BitmapFactory.decodeStream(new FileInputStream(f));
-            mProfilePhoto.setImageBitmap(b);
-        }
-        catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+    private void loadImageFromDatabase() {
+        Bitmap picture = PictureTypeConverter.toBitmap(this.currentProfile.getPicture());
+        mProfilePhoto.setImageBitmap(picture);
     }
 
 }

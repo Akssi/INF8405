@@ -31,13 +31,8 @@ public class ProfileRepository {
 
 
     public void saveProfile(Profile profile) {
-        this.refreshProfile(profile);
+        executor.execute(() -> profileDao.save(profile));
     }
-
-    private void refreshProfile(Profile profile) {
-        executor.execute(() -> profileDao.update(profile));
-    }
-
 
     public LiveData<List<Profile>> getSurroundingProfiles(Location location, int radius) {
         return getProfilesInsideRange(location, radius + SURROUNDING_PROFILE_RANGE);
@@ -51,6 +46,10 @@ public class ProfileRepository {
 
     public LiveData<List<Profile>> getMapProfiles(Location location) {
         return getProfilesInsideRange(location, PROFILE_MAP_RANGE);
+    }
+
+    public LiveData<Profile> getProfile(String name) {
+        return this.profileDao.getProfileByName(name);
     }
 
     @NonNull

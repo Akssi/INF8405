@@ -50,6 +50,14 @@ public class TronViewModel extends AndroidViewModel {
         return batteryLiveData;
     }
 
+    public void saveProfile(Profile profile) {
+        this.profileRepository.saveProfile(profile);
+    }
+
+    public LiveData<Profile> getProfile(String name) {
+        return this.profileRepository.getProfile(name);
+    }
+
     public LiveData<List<Profile>> getCurrentLocationProfiles() {
         return Transformations.switchMap(locationLiveData, location -> {
             this.currentLocation = location;
