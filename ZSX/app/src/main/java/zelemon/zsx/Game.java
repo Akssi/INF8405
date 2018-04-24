@@ -4,10 +4,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.os.Handler;
 import android.renderscript.Int2;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
@@ -100,15 +98,15 @@ public class Game extends Activity implements
 
     // Grid size
     final static Int2 GRID_SIZE = new Int2(90, 160);
-    final static Int2[] TWO_PLAYER_START = new Int2[]{
-            new Int2(GRID_SIZE.x / 4, GRID_SIZE.y / 2),
-            new Int2(3 * GRID_SIZE.x / 4, GRID_SIZE.y / 2)};
+    final static int QuarterX = GRID_SIZE.x / 4;
+    final static int MidY = GRID_SIZE.y / 2;
+    final static int ThreeQuarterX = 3 * GRID_SIZE.x / 4;
 
-    final static Int2[] THREE_PLUS_PLAYER_START = new Int2[]{
-            new Int2(GRID_SIZE.x / 4, GRID_SIZE.y / 4),
-            new Int2(3 * GRID_SIZE.x / 4, GRID_SIZE.y / 4),
-            new Int2(GRID_SIZE.x / 4, 3 * GRID_SIZE.y / 4),
-            new Int2(3 * GRID_SIZE.x / 4, 3 * GRID_SIZE.y / 4)};
+//    final static Int2[] THREE_PLUS_PLAYER_START = new Int2[]{
+//            new Int2(GRID_SIZE.x / 4, GRID_SIZE.y / 4),
+//            new Int2(3 * GRID_SIZE.x / 4, GRID_SIZE.y / 4),
+//            new Int2(GRID_SIZE.x / 4, 3 * GRID_SIZE.y / 4),
+//            new Int2(3 * GRID_SIZE.x / 4, 3 * GRID_SIZE.y / 4)};
 
     // This array lists everything that's clickable, so we can install click
     // event handlers.
@@ -142,6 +140,7 @@ public class Game extends Activity implements
     String mIncomingInvitationId = null;
     // Message buffer for sending messages
     byte[] mMsgBuf = new byte[100];
+    byte[] msgCollBuf = new byte[100];
     // The currently signed in account, used to check the account has changed outside of this activity when resuming.
     GoogleSignInAccount mSignedInAccount = null;
     // Current state of the game:
@@ -155,25 +154,7 @@ public class Game extends Activity implements
     Set<String> mFinishedParticipants = new HashSet<>();
     int mCurScreen = -1;
     private boolean isRestarting;
-
-    private void checkCollisionResolve() {
-        if (mFinishedParticipants.size() == mParticipants.size()) {
-            restartGame();
-        }
-    }
-
     private TextView mStartGameCountdown;
-    private boolean isInCollision;
-
-    private Int2 getInitialPosition(int i) {
-        if (mParticipants.size() <= 2)
-            return TWO_PLAYER_START[i];
-        else if (mParticipants.size() <= 4)
-            return THREE_PLUS_PLAYER_START[i];
-        else
-            throw new RuntimeException("Number of participant above 4");
-    }
-
     private boolean gameReady;
     // Client used to sign in with Google APIs
     private GoogleSignInClient mGoogleSignInClient = null;
@@ -359,17 +340,15 @@ public class Game extends Activity implements
             String sender = realTimeMessage.getSenderParticipantId();
 
             if (buf[0] == 'C' && !isRestarting) {
+                Log.i("COMM", "COLLISION message received");
+                Log.i("COMM", "\tfrom " + sender);
                 mFinishedParticipants.add(sender);
 //                mParticipantLives.put(sender, mParticipantLives.get(sender)-1);
                 // update the scores on the screen
 //                updatePeerScoresDisplay();
 
-                // Mark this participant as stopped
-//                isInCollision = true;
                 mGamePanel.stopGameUpdate();
                 sendCollisionAck(sender);
-                Log.i("ZSX", "COLLISION message received");
-                Log.i("ZSX", "\tfrom " + sender);
 //                Handler handler = new Handler();
 //                handler.postDelayed(new DelayedAck(sender), 1000);
                 if (isWaitingCollisionAck) {
@@ -378,8 +357,8 @@ public class Game extends Activity implements
 
 
             } else if (buf[0] == 'A' && !isRestarting) {
-                Log.i("ZSX", "ACK COLLISION message received");
-                Log.i("ZSX", "\tfrom " + sender);
+                Log.i("COMM", "ACK COLLISION message received");
+                Log.i("COMM", "\tfrom " + sender);
                 isWaitingCollisionAck = false;
                 mFinishedParticipants.add(sender);
                 checkCollisionResolve();
@@ -394,8 +373,8 @@ public class Game extends Activity implements
             }
             // Initialize Game
             else if (buf[0] == 'I') {
-                Log.i("ZSX", "INITIALIZE message received");
-                Log.i("ZSX", "\tfrom " + sender);
+                Log.i("COMM", "INITIALIZE message received");
+                Log.i("COMM", "\tfrom " + sender);
                 for (int i = 0; i < mParticipants.size(); i++) {
                     Participant participant = mParticipants.get(i);
                     if (i == mParticipantIndex) {
@@ -408,13 +387,11 @@ public class Game extends Activity implements
             }
             // Start Game
             else if (buf[0] == 'S') {
-//                Log.i("ZSX", String.valueOf(mParticipants.size()));
-//                Log.i("ZSX", String.valueOf(mParticipantIndex));
-                startGame(true);
                 StringBuilder sb = new StringBuilder();
                 sb.append("START message received\n\tfrom ");
                 sb.append(sender);
-                Log.i("ZSX", sb.toString());
+                Log.i("COMM", sb.toString());
+                startGame(mMultiplayer);
             }
         }
     };
@@ -447,6 +424,35 @@ public class Game extends Activity implements
             Log.e("ZSX", sb.toString());
         }
         return ByteBuffer.wrap(byteBarray).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+    }
+
+    // Source: https://stackoverflow.com/questions/8911356/whats-the-best-practice-to-round-a-float-to-2-decimals
+    public static BigDecimal round(float d, int decimalPlace) {
+        BigDecimal bd = new BigDecimal(Float.toString(d));
+        bd = bd.setScale(decimalPlace, BigDecimal.ROUND_HALF_UP);
+        return bd;
+    }
+
+    private void checkCollisionResolve() {
+        if (mFinishedParticipants.size() == mParticipants.size()) {
+            restartGame();
+        }
+    }
+
+    private Int2 getInitialPosition(int i) {
+        Int2 pos;
+        if (mParticipants.size() <= 2) {
+            if (i == 0) {
+                pos = new Int2(QuarterX, MidY);
+            } else {
+                pos = new Int2(ThreeQuarterX, MidY);
+            }
+        }
+//        else if (nbParticipants <= 4)
+//            return THREE_PLUS_PLAYER_START[i];
+        else
+            throw new RuntimeException("Number of participant above 4");
+        return pos;
     }
 
     @Override
@@ -489,6 +495,11 @@ public class Game extends Activity implements
         checkPlaceholderIds();
     }
 
+    /*
+     * CALLBACKS SECTION. This section shows how we implement the several games
+     * API callbacks.
+     */
+
     // Check the sample to ensure all placeholder ids are are updated with real-world values.
     // This is strictly for the purpose of the samples; you don't need this in a production
     // application.
@@ -519,11 +530,6 @@ public class Game extends Activity implements
                     .setNeutralButton(android.R.string.ok, null).create().show();
         }
     }
-
-    /*
-     * CALLBACKS SECTION. This section shows how we implement the several games
-     * API callbacks.
-     */
 
     @Override
     protected void onResume() {
@@ -732,6 +738,10 @@ public class Game extends Activity implements
                 .show();
     }
 
+    /*
+     * GAME LOGIC SECTION. Methods that implement the game's rules.
+     */
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
 
@@ -784,10 +794,6 @@ public class Game extends Activity implements
         }
         super.onActivityResult(requestCode, resultCode, intent);
     }
-
-    /*
-     * GAME LOGIC SECTION. Methods that implement the game's rules.
-     */
 
     private void handleSelectPlayersResult(int response, Intent data) {
         if (response != Activity.RESULT_OK) {
@@ -915,6 +921,11 @@ public class Game extends Activity implements
         }
     }
 
+    /*
+     * COMMUNICATIONS SECTION. Methods that implement the game's network
+     * protocol.
+     */
+
     // Show the waiting room UI to track the progress of other players as they enter the
     // room and get connected.
     void showWaitingRoom(Room room) {
@@ -932,11 +943,6 @@ public class Game extends Activity implements
                 })
                 .addOnFailureListener(createFailureListener("There was a problem getting the waiting room!"));
     }
-
-    /*
-     * COMMUNICATIONS SECTION. Methods that implement the game's network
-     * protocol.
-     */
 
     private void onConnected(GoogleSignInAccount googleSignInAccount) {
         Log.d(TAG, "onConnected(): connected to Google APIs");
@@ -1024,6 +1030,11 @@ public class Game extends Activity implements
         }
     }
 
+
+    /*
+     * UI SECTION. Methods that implement the game's UI.
+     */
+
     // Reset game variables in preparation for a new game.
     void resetGameVars() {
         mScore = 0;
@@ -1031,11 +1042,6 @@ public class Game extends Activity implements
         mParticipantEnemy.clear();
         mFinishedParticipants.clear();
     }
-
-
-    /*
-     * UI SECTION. Methods that implement the game's UI.
-     */
 
     private void broadcastGameStart() {
         // Send start signal to all
@@ -1050,16 +1056,16 @@ public class Game extends Activity implements
                     mRoomId, participant.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
                         @Override
                         public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
-                            Log.d(TAG, "START message sent");
-                            Log.d(TAG, "  statusCode: " + statusCode);
-                            Log.d(TAG, "  tokenId: " + tokenId);
-                            Log.d(TAG, "  recipientParticipantId: " + recipientParticipantId);
+                            Log.d("COMM", "START message sent");
+                            Log.d("COMM", "  statusCode: " + statusCode);
+                            Log.d("COMM", "  tokenId: " + tokenId);
+                            Log.d("COMM", "  recipientParticipantId: " + recipientParticipantId);
                         }
                     })
                     .addOnSuccessListener(new OnSuccessListener<Integer>() {
                         @Override
                         public void onSuccess(Integer tokenId) {
-                            Log.d(TAG, "START message with tokenId: " + tokenId);
+                            Log.d("COMM", "START message with tokenId: " + tokenId);
                         }
                     });
         }
@@ -1086,7 +1092,7 @@ public class Game extends Activity implements
                 }
             }
             if (mParticipantIndex == 0) {
-                Log.v("ZSX", "Broadcasting colors from " + mParticipants.get(mParticipantIndex).getParticipantId());
+                Log.v("COMM", "Broadcasting colors from " + mParticipants.get(mParticipantIndex).getParticipantId());
                 broadcastPlayersColor();
                 broadcastGameStart();
                 startGame(mMultiplayer);
@@ -1095,7 +1101,7 @@ public class Game extends Activity implements
     }
 
     void restartGame() {
-        Log.i("ZSX", "Restarting game from " + mParticipants.get(mParticipantIndex).getParticipantId());
+        Log.i("COMM", "Restarting game call from " + mParticipants.get(mParticipantIndex).getParticipantId());
         if (!mMultiplayer) {
             startGame(mMultiplayer);
         } else {
@@ -1110,7 +1116,7 @@ public class Game extends Activity implements
             mFinishedParticipants.clear();
             isRestarting = true;
             if (mParticipantIndex == 0) {
-                Log.v("ZSX", "Broadcasting restart game from " + mParticipants.get(mParticipantIndex).getParticipantId());
+                Log.v("COMM", "Broadcasting restart game from " + mParticipants.get(mParticipantIndex).getParticipantId());
 
                 broadcastGameStart();
                 startGame(mMultiplayer);
@@ -1162,18 +1168,11 @@ public class Game extends Activity implements
         }.start();
     }
 
-    // Source: https://stackoverflow.com/questions/8911356/whats-the-best-practice-to-round-a-float-to-2-decimals
-    public static BigDecimal round(float d, int decimalPlace) {
-        BigDecimal bd = new BigDecimal(Float.toString(d));
-        bd = bd.setScale(decimalPlace, BigDecimal.ROUND_HALF_UP);
-        return bd;
-    }
-
     private void broadcastPlayersColor() {
         if (!mMultiplayer) {
             // playing single-player mode
 
-            Log.i("ZSX", "No color broadcast in single player");
+            Log.i("COMM", "No color broadcast in single player");
             return;
         }
         // Host color
@@ -1227,16 +1226,16 @@ public class Game extends Activity implements
                     mRoomId, participant.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
                         @Override
                         public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
-                            Log.d(TAG, "COLOR message sent");
+                            Log.d("COMM", "COLOR message sent");
 //                            Log.d(TAG, "  statusCode: " + statusCode);
 //                            Log.d(TAG, "  tokenId: " + tokenId);
-                            Log.d(TAG, "  recipientParticipantId: " + recipientParticipantId);
+                            Log.d("COMM", "  recipientParticipantId: " + recipientParticipantId);
                         }
                     })
                     .addOnSuccessListener(new OnSuccessListener<Integer>() {
                         @Override
                         public void onSuccess(Integer tokenId) {
-                            Log.d(TAG, "COLOR message with tokenId: " + tokenId);
+                            Log.d("COMM", "COLOR message with tokenId: " + tokenId);
                         }
                     });
         }
@@ -1253,35 +1252,35 @@ public class Game extends Activity implements
 
     public void broadcastCollision() {
         // Already registered collision(s)/Restarting
-        if (isRestarting || mParticipants == null ) {
+        if (isRestarting || mParticipants == null || mFinishedParticipants.contains(mPlayerId)) {
             return;
         }
-        mMsgBuf[0] = (byte) 'C';
+        msgCollBuf[0] = (byte) 'C';
         isWaitingCollisionAck = true;
+        mFinishedParticipants.add(mPlayerId);
         // Send to every other participant.
         for (Participant p : mParticipants) {
             if (p.getParticipantId().equals(mMyId)) {
-                mFinishedParticipants.add(mPlayerId);
                 continue;
             }
             if (p.getStatus() != Participant.STATUS_JOINED) {
                 continue;
             }
             // collision notification must be sent via reliable message to restart game
-            mRealTimeMultiplayerClient.sendReliableMessage(mMsgBuf,
+            mRealTimeMultiplayerClient.sendReliableMessage(msgCollBuf,
                     mRoomId, p.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
                         @Override
                         public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
-                            Log.d(TAG, "COLLISION message sent");
+                            Log.d("COMM", "COLLISION message sent");
 //                            Log.d(TAG, "  statusCode: " + statusCode);
 //                            Log.d(TAG, "  tokenId: " + tokenId);
-                            Log.d(TAG, "  recipientParticipantId: " + recipientParticipantId);
+                            Log.d("COMM", "  recipientParticipantId: " + recipientParticipantId);
                         }
                     })
                     .addOnSuccessListener(new OnSuccessListener<Integer>() {
                         @Override
                         public void onSuccess(Integer tokenId) {
-                            Log.d(TAG, "COLLISION message with tokenId: " + tokenId);
+                            Log.d("COMM", "COLLISION message with tokenId: " + tokenId);
                         }
                     });
         }
@@ -1306,10 +1305,10 @@ public class Game extends Activity implements
                     mRoomId, participantId, new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
                         @Override
                         public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
-                            Log.d(TAG, "ACK COLLISION message sent");
+                            Log.d("COMM", "ACK COLLISION message sent");
 //                            Log.d(TAG, "  statusCode: " + statusCode);
 //                            Log.d(TAG, "  tokenId: " + tokenId);
-                            Log.d(TAG, "  recipientParticipantId: " + recipientParticipantId);
+                            Log.d("COMM", "  recipientParticipantId: " + recipientParticipantId);
                         }
                     })
                     .addOnSuccessListener(new OnSuccessListener<Integer>() {
@@ -1319,7 +1318,7 @@ public class Game extends Activity implements
                                 mFinishedParticipants.add(mPlayerId);
                                 checkCollisionResolve();
                             }
-                            Log.d(TAG, "ACK COLLISION message with tokenId: " + tokenId);
+                            Log.d("COMM", "ACK COLLISION message with tokenId: " + tokenId);
                         }
                     });
         }
@@ -1386,16 +1385,16 @@ public class Game extends Activity implements
                         mRoomId, p.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
                             @Override
                             public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
-                                Log.d(TAG, "Score message sent");
-                                Log.d(TAG, "  statusCode: " + statusCode);
-                                Log.d(TAG, "  tokenId: " + tokenId);
-                                Log.d(TAG, "  recipientParticipantId: " + recipientParticipantId);
+                                Log.d("COMM", "Score message sent");
+                                Log.d("COMM", "  statusCode: " + statusCode);
+                                Log.d("COMM", "  tokenId: " + tokenId);
+                                Log.d("COMM", "  recipientParticipantId: " + recipientParticipantId);
                             }
                         })
                         .addOnSuccessListener(new OnSuccessListener<Integer>() {
                             @Override
                             public void onSuccess(Integer tokenId) {
-                                Log.d(TAG, "Score message with tokenId: " + tokenId);
+                                Log.d("COMM", "Score message with tokenId: " + tokenId);
                             }
                         });
             } else {

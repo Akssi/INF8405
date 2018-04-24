@@ -5,7 +5,6 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Point;
-import android.graphics.Rect;
 import android.renderscript.Int2;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -113,8 +112,10 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
         sb.append(height);
         Log.i("ZSX", sb.toString());
         player.updateScreenDim(new Point(width, height));
+        player.resetPlayer();
         for (Enemy e : game.mParticipantEnemy.values()) {
             e.updateScreenDim(new Point(width, height));
+            e.resetEnemy();
         }
         thread.runOnce();
     }

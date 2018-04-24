@@ -6,12 +6,11 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.renderscript.Float2;
 import android.renderscript.Int2;
-import android.util.Log;
-
-import static android.support.v4.math.MathUtils.clamp;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static android.support.v4.math.MathUtils.clamp;
 
 /**
  * Created by youri on 2018-03-08.
@@ -68,13 +67,13 @@ public class Enemy implements GameObject {
         }
     }
 
+    public Int2 getEnemyPosition() {
+        return enemyPosition;
+    }
+
     public void setEnemyPosition(Int2 enemyPosition) {
 
         this.enemyPosition = enemyPosition;
-    }
-
-    public Int2 getEnemyPosition() {
-        return enemyPosition;
     }
 
     public void updateScreenDim(Point newScreenDim) {
@@ -84,5 +83,10 @@ public class Enemy implements GameObject {
 
     public List<Int2> getTrailPos(){
         return this.trailPos;
+    }
+
+    public void resetEnemy() {
+        this.trail = new ArrayList<>();
+        this.trailPos = new ArrayList<>();
     }
 }

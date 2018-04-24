@@ -6,14 +6,11 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.renderscript.Float2;
 import android.renderscript.Int2;
-import android.renderscript.Int2;
-import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static android.support.v4.math.MathUtils.clamp;
-import static java.lang.Math.round;
 
 /**
  * Created by youri on 2018-03-08.
@@ -98,12 +95,20 @@ public class Player implements GameObject {
     }
 
     public void updateDirection(Point direction) {
+        if (this.direction.x == -direction.x && this.direction.y == -direction.y) {
+            return;
+        }
         this.direction = direction;
     }
 
     public void updateScreenDim(Point newScreenDim) {
         pixelPerSquare = new Float2(newScreenDim.x / (float) (gridSize.x), (newScreenDim.y / (float) (gridSize.y)));
 //        Log.i("ZSX", "Screen dim update");
+    }
+
+    public void resetPlayer() {
+        this.trail = new ArrayList<>();
+        this.trailPos = new ArrayList<>();
     }
 
     public List<Int2> getTrailPos(){
