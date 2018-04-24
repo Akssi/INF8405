@@ -1,9 +1,12 @@
 package zelemon.zsx.dependencyInjection;
 
 import android.app.Application;
+import android.arch.persistence.room.Room;
 import dagger.Module;
 import dagger.Provides;
 import zelemon.zsx.battery.BatteryLiveData;
+import zelemon.zsx.persistence.database.ProfileDao;
+import zelemon.zsx.persistence.database.ProfileDatabase;
 import zelemon.zsx.services.LocationLiveData;
 
 import javax.inject.Singleton;
@@ -15,6 +18,18 @@ import java.util.concurrent.Executors;
  */
 @Module(includes = ViewModelModule.class)
 class AppModule {
+
+    @Singleton
+    @Provides
+    ProfileDatabase provideProfileDatabase(Application application) {
+        return Room.databaseBuilder(application, ProfileDatabase.class, "profile.db").fallbackToDestructiveMigration().build();
+    }
+
+    @Singleton
+    @Provides
+    ProfileDao provideProfileDao(ProfileDatabase profileDatabase) {
+        return profileDatabase.getProfileDao();
+    }
 
     @Provides
     @Singleton
