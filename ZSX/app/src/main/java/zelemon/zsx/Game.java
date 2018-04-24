@@ -1132,7 +1132,7 @@ public class Game extends AppCompatActivity implements
             for (int i = 0; i < mParticipants.size(); i++) {
                 Participant participant = mParticipants.get(i);
                 if (mParticipantLives.get(participant.getParticipantId()) <= 0) {
-                    switchToMainScreen();
+                    finish();
                 }
                 if (i != mParticipantIndex) {
                     Enemy enemy = mParticipantEnemy.get(participant.getParticipantId());
@@ -1173,17 +1173,20 @@ public class Game extends AppCompatActivity implements
         Int2 playerPosition = new Int2(GRID_SIZE.x / 2, GRID_SIZE.y / 2);
         if (multiplayer) {
             playerPosition = getInitialPosition(mParticipantIndex);
-
+            int playerLives = mParticipantLives.get(mParticipants.get(mParticipantIndex).getParticipantId());
             for (int i = 0; i < 3; i++) {
-                if (i > mParticipantLives.get(mParticipants.get(mParticipantIndex).getParticipantId()))
-                    mPLayerLives.get(i).setVisibility(View.GONE);
-                else
-                    mPLayerLives.get(i).setVisibility(View.VISIBLE);
                 for (Participant participant : mParticipants) {
-                    if (i > mParticipantLives.get(participant.getParticipantId()))
-                        mEnemyLives.get(i).setVisibility(View.GONE);
-                    else
-                        mEnemyLives.get(i).setVisibility(View.VISIBLE);
+                    if (participant.getParticipantId().equals(mParticipants.get(mParticipantIndex).getParticipantId())) {
+                        if (i + 1 <= playerLives)
+                            mPLayerLives.get(i).setVisibility(View.VISIBLE);
+                        else
+                            mPLayerLives.get(i).setVisibility(View.GONE);
+                    } else {
+                        if (i + 1 <= mParticipantLives.get(participant.getParticipantId()))
+                            mEnemyLives.get(i).setVisibility(View.VISIBLE);
+                        else
+                            mEnemyLives.get(i).setVisibility(View.GONE);
+                    }
                 }
             }
         }
