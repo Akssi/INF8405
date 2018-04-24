@@ -19,6 +19,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     private Game game;
     private boolean isRunning;
 
+
     @SuppressLint("ClickableViewAccessibility")
     public GamePanel(Context context, Int2 gridSize, Int2 playerPosition) {
         super(context);
@@ -167,7 +168,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     public void draw(Canvas canvas) {
         super.draw(canvas);
 
-        canvas.drawColor(Color.DKGRAY);
+        canvas.drawColor(Color.BLACK);
         player.draw(canvas);
         for (Enemy enemy : game.mParticipantEnemy.values()) {
             enemy.draw(canvas);
