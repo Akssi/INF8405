@@ -129,6 +129,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
                 if(player.getPlayerPosition().x == pos.x && player.getPlayerPosition().y == pos.y)
                 {
                     // Collision
+                    Log.i("ZSX", "COLLISION with enemy");
                     game.broadcastCollision();
                     stopGameUpdate();
                     break;
@@ -143,19 +144,16 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
 
         }
 
-        //for(Int2 pos : player.getTrailPos()){
-        if(player.getTrailPos().size() > 2)
-            for(int i = 0; i < player.getTrailPos().size()-2; i++){
-                Int2 pos = player.getTrailPos().get(i);
-                if(player.getPlayerPosition().x == pos.x && player.getPlayerPosition().y == pos.y)
-                {
-                    Log.i("ZSX", "COLLISION");
-                    // Collision
-                    game.broadcastCollision();
-                    stopGameUpdate();
-                    break;
-                }
+        for (int i = 0; i < player.getTrailPos().size(); i++) {
+            Int2 pos = player.getTrailPos().get(i);
+            if (player.getPlayerPosition().x == pos.x && player.getPlayerPosition().y == pos.y) {
+                // Collision
+                Log.i("ZSX", "COLLISION with self");
+                game.broadcastCollision();
+                stopGameUpdate();
+                break;
             }
+        }
 
         game.broadcastPosition(player);
     }
