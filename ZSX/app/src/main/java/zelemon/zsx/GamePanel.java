@@ -129,7 +129,8 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
         player.update();
         for (Enemy enemy : game.mParticipantEnemy.values()) {
             enemy.update();
-            for(Int2 pos : enemy.getTrailPos()){
+            for (int i = 0; i < enemy.getTrailPos().size(); i++) {
+                Int2 pos = enemy.getTrailPos().get(i);
 
                 if(player.getPlayerPosition().x == pos.x && player.getPlayerPosition().y == pos.y)
                 {
