@@ -1735,12 +1735,12 @@ public class Game extends DaggerAppCompatActivity implements
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         MediaPlayer media = MediaPlayer.create(this, R.raw.background_vid);
-        int videoWidth = media.getVideoWidth();
-        int videoHeight = media.getVideoHeight();
-        int screenHeight = getHeight();
-        android.view.ViewGroup.LayoutParams lp = getLayoutParams();
-        lp.height = screenHeight;
-        lp.width = (int) (((float) videoWidth / (float) videoHeight) * (float) screenHeight);
+//        int videoWidth = media.getVideoWidth();
+//        int videoHeight = media.getVideoHeight();
+//        int screenHeight = getHeight();
+//        android.view.ViewGroup.LayoutParams lp = getLayoutParams();
+//        lp.height = screenHeight;
+//        lp.width = (int) (((float) videoWidth / (float) videoHeight) * (float) screenHeight);
 
         //setLayoutParams(lp);
         media.setDisplay(mSurfaceView.getHolder());
