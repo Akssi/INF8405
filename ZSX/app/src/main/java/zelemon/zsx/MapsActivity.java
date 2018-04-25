@@ -14,6 +14,8 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.widget.Toast;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -46,6 +48,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     private final Observer<List<Profile>> mapProfileObserver = this::displayProfilesOnMap;
     private boolean onStart = true;
     private final Observer<Location> locationObserver = this::updateCurrentLocationOnMap;
+    private String currentDisplayName;
 
     // From StackOverflow : https://stackoverflow.com/questions/837872/calculate-distance-in-meters-when-you-know-longitude-and-latitude-in-java
     private static float distFrom(float lat1, float lng1, float lat2, float lng2) {
@@ -74,8 +77,16 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     }
 
     private void initializeObserver() {
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+
+        if (account != null) {
+            currentDisplayName = account.getDisplayName();
+            if (currentDisplayName == null) {
+                currentDisplayName = "Name";
+            }
+        }
         tronViewModel.getLocationLiveData().observe(this, this.locationObserver);
-        tronViewModel.getMapProfiles().observe(this, this.mapProfileObserver);
+        tronViewModel.getAllProfilesWithoutOurDisplayName(currentDisplayName).observe(this, this.mapProfileObserver);
 
         clusterManager = new ClusterManager<>(this, mMap);
         mMap.setOnCameraIdleListener(clusterManager);

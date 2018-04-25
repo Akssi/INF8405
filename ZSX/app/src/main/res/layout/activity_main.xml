@@ -29,11 +29,6 @@
 
         <TextView style="@style/GameBlurb" />
 
-        <Button
-            android:id="@+id/button_single_player"
-            style="@style/MainScreenButton"
-            android:text="@string/single_player" />
-
         <com.google.android.gms.common.SignInButton
             android:id="@+id/button_sign_in"
             style="@style/SignInButton" />
@@ -45,15 +40,6 @@
         style="@style/LLScreen">
 
         <TextView style="@style/GameTitle" />
-
-        <Button
-            android:id="@+id/button_single_player_2"
-            style="@style/MainScreenButton"
-            android:text="@string/single_player" />
-
-        <TextView
-            style="@style/MainScreenButtonBlurb"
-            android:text="@string/single_player_explanation" />
 
         <Button
             android:id="@+id/button_quick_game"
