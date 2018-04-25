@@ -18,6 +18,8 @@ public class StatusActivity extends AppCompatActivity {
 
 
     private TextView batteryLevel;
+    private Long rxBytesGlobal = 0L;
+    private Long txBytesGlobal = 0L;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +32,15 @@ public class StatusActivity extends AppCompatActivity {
                     " %";
             batteryLevel.setText(batteryLevelText);
         });
+        TextView bandwidthLevel = findViewById(R.id.bandwidth_since_startup);
+        int UID = android.os.Process.myUid();
+        rxBytesGlobal += getUidRxBytes(UID);
+        txBytesGlobal += getUidTxBytes(UID);
+
+        String bandwidth = "Rx bytes: " + rxBytesGlobal + " Tx Bytes: " + txBytesGlobal;
+
+        bandwidthLevel.setText(bandwidth);
+
     }
 
     /**
