@@ -14,7 +14,6 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.widget.Toast;
-
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -24,17 +23,15 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.clustering.Cluster;
 import com.google.maps.android.clustering.ClusterManager;
-
-import java.util.List;
-
-import javax.inject.Inject;
-
 import dagger.android.support.DaggerAppCompatActivity;
 import zelemon.zsx.Fragments.CardFragment;
 import zelemon.zsx.dependencyInjection.TronViewModelFactory;
 import zelemon.zsx.persistence.database.Profile;
 
-public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener,ClusterManager.OnClusterClickListener<PlayerMarker> {
+import javax.inject.Inject;
+import java.util.List;
+
+public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener, ClusterManager.OnClusterClickListener<PlayerMarker> {
 
     private static final int PERMISSION_REQUEST_LOCATION = 0;
     @Inject
@@ -43,11 +40,12 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     private LiveData<List<Profile>> mProfiles;
     private final Observer<List<Profile>> profileCardObserver = this::showProfilesOnCard;
     private LatLng currentCoordinates;
-    private final Observer<Location> locationObserver = this::updateCurrentLocationOnMap;
     private TronViewModel tronViewModel;
     private Location markerLocation = new Location(LocationManager.GPS_PROVIDER);
     private ClusterManager<PlayerMarker> clusterManager;
     private final Observer<List<Profile>> mapProfileObserver = this::displayProfilesOnMap;
+    private boolean onStart = true;
+    private final Observer<Location> locationObserver = this::updateCurrentLocationOnMap;
 
     // From StackOverflow : https://stackoverflow.com/questions/837872/calculate-distance-in-meters-when-you-know-longitude-and-latitude-in-java
     private static float distFrom(float lat1, float lng1, float lat2, float lng2) {
@@ -92,7 +90,10 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     private void updateCurrentLocationOnMap(Location location) {
         currentCoordinates = new LatLng(location.getLatitude(), location.getLongitude());
         mMap.setMyLocationEnabled(true);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentCoordinates, 15));
+        if (onStart) {
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentCoordinates, 15));
+            onStart = false;
+        }
     }
 
     /**
@@ -114,7 +115,6 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
-     *
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -138,6 +138,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     /**
      * This function is called when a marker is clicked.
      * It queries the database for players to ultimately show them to the user.
+     *
      * @param marker The marker that was clicked on.
      * @return true if the listener has consumed the event (i.e., the default behavior should not occur); false otherwise
      */
@@ -153,6 +154,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     /**
      * This function is called when a cluster is clicked.
      * It queries the database for players to ultimately show them to the user.
+     *
      * @param cluster The cluster that was clicked on.
      * @return true if the listener has consumed the event (i.e., the default behavior should not occur); false otherwise
      */
@@ -169,7 +171,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         }
         this.markerLocation.setLatitude(cluster.getPosition().latitude);
         this.markerLocation.setLongitude(cluster.getPosition().longitude);
-        mProfiles = tronViewModel.getProfilesSurroundingLocation(this.markerLocation, (int)radius);
+        mProfiles = tronViewModel.getProfilesSurroundingLocation(this.markerLocation, (int) radius);
         mProfiles.observe(this, this.profileCardObserver);
         return true;
     }
@@ -192,13 +194,13 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
      */
     private void showProfilesOnCard(List<Profile> profileList) {
 
-        if(profileList.size() > 1){
+        if (profileList.size() > 1) {
 
             // setup the alert builder
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle(getResources().getString(R.string.player_profile_title));
             String[] profileNames = new String[profileList.size()];
-            for(int i = 0; i < profileList.size(); i++)
+            for (int i = 0; i < profileList.size(); i++)
                 profileNames[i] = profileList.get(i).getName();
 
             // add a list
