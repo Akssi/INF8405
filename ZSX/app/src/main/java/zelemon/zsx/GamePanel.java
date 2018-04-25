@@ -177,6 +177,11 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
 
     public void startGameUpdate() {
         if (!isRunning) {
+
+            player.resetPlayer();
+            for (Enemy e : game.mParticipantEnemy.values()) {
+                e.resetEnemy();
+            }
             //we can safely start the game loop
             thread.setRunning(true);
             thread.start();
