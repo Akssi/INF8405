@@ -16,8 +16,8 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <color name="AccentColor">#cc0000</color>
-    <color name="PopupColor">@color/AccentColor</color>
+    <color name="AccentColor">#FFFFFF</color>
+    <color name="PopupColor">#FFFFFF</color>
     <color name="PopupTextColor">#ffffff</color>
     <color name="ButtonTextColor">#ffffff</color>
     <color name="BlurbColor">#000000</color>
@@ -61,7 +61,7 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:text">@string/game_title</item>
         <item name="android:textColor">@color/AccentColor</item>
-        <item name="android:textSize">@dimen/TitleSize</item>
+        <item name="android:textSize">64dp</item>
         <item name="android:layout_marginBottom">40dp</item>
     </style>
 
