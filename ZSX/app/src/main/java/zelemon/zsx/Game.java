@@ -2,40 +2,79 @@ package zelemon.zsx;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.renderscript.Int2;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.*;
+import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.SurfaceView;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.games.*;
+import com.google.android.gms.games.Games;
+import com.google.android.gms.games.GamesActivityResultCodes;
+import com.google.android.gms.games.GamesCallbackStatusCodes;
+import com.google.android.gms.games.GamesClient;
+import com.google.android.gms.games.GamesClientStatusCodes;
+import com.google.android.gms.games.InvitationsClient;
+import com.google.android.gms.games.PlayersClient;
+import com.google.android.gms.games.RealTimeMultiplayerClient;
 import com.google.android.gms.games.multiplayer.Invitation;
 import com.google.android.gms.games.multiplayer.InvitationCallback;
 import com.google.android.gms.games.multiplayer.Multiplayer;
 import com.google.android.gms.games.multiplayer.Participant;
-import com.google.android.gms.games.multiplayer.realtime.*;
+import com.google.android.gms.games.multiplayer.realtime.OnRealTimeMessageReceivedListener;
+import com.google.android.gms.games.multiplayer.realtime.RealTimeMessage;
+import com.google.android.gms.games.multiplayer.realtime.Room;
+import com.google.android.gms.games.multiplayer.realtime.RoomConfig;
+import com.google.android.gms.games.multiplayer.realtime.RoomStatusUpdateCallback;
+import com.google.android.gms.games.multiplayer.realtime.RoomUpdateCallback;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import zelemon.zsx.battery.BatteryLiveData;
-import zelemon.zsx.battery.StatusActivity;
+
+import org.apache.commons.lang3.SerializationUtils;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+
+import javax.inject.Inject;
+
+import dagger.android.support.DaggerAppCompatActivity;
+import zelemon.zsx.battery.BatteryLiveData;
+import zelemon.zsx.battery.StatusActivity;
+import zelemon.zsx.dependencyInjection.TronViewModelFactory;
+import zelemon.zsx.persistence.database.Profile;
+import zelemon.zsx.persistence.database.SerializableProfile;
 
 
 /**
@@ -57,7 +96,7 @@ import java.util.*;
  *
  * @author Bruno Oliveira (btco), 2013-04-26
  */
-public class Game extends AppCompatActivity implements
+public class Game extends DaggerAppCompatActivity implements
         View.OnClickListener {
 
     // This array lists everything that's clickable, so we can install click
@@ -84,28 +123,25 @@ public class Game extends AppCompatActivity implements
     final static int QuarterX = GRID_SIZE.x / 4;
     final static int MidY = GRID_SIZE.y / 2;
     final static int ThreeQuarterX = 3 * GRID_SIZE.x / 4;
-
-//    final static Int2[] THREE_PLUS_PLAYER_START = new Int2[]{
-//            new Int2(GRID_SIZE.x / 4, GRID_SIZE.y / 4),
-//            new Int2(3 * GRID_SIZE.x / 4, GRID_SIZE.y / 4),
-//            new Int2(GRID_SIZE.x / 4, 3 * GRID_SIZE.y / 4),
-//            new Int2(3 * GRID_SIZE.x / 4, 3 * GRID_SIZE.y / 4)};
-private static boolean isStartupLaunch = true;
     // This array lists all the individual screens our game has.
     final static int[] SCREENS = {
             R.id.screen_game, R.id.screen_main, R.id.screen_sign_in,
             R.id.screen_wait
     };
-
     final static int[] PLAYER_LIVES = {
             R.id.life3, R.id.life2, R.id.life1
     };
-
     final static int[] ENEMY_LIVES = {
             R.id.enemy_life3, R.id.enemy_life2, R.id.enemy_life1
     };
     // Request code used to invoke sign in user interactions.
     private static final int RC_SIGN_IN = 9001;
+    //    final static Int2[] THREE_PLUS_PLAYER_START = new Int2[]{
+//            new Int2(GRID_SIZE.x / 4, GRID_SIZE.y / 4),
+//            new Int2(3 * GRID_SIZE.x / 4, GRID_SIZE.y / 4),
+//            new Int2(GRID_SIZE.x / 4, 3 * GRID_SIZE.y / 4),
+//            new Int2(3 * GRID_SIZE.x / 4, 3 * GRID_SIZE.y / 4)};
+    private static boolean isStartupLaunch = true;
     protected int playerColor = Color.CYAN;
     // Room ID where the currently active game is taking place; null if we're
     // not playing.
@@ -136,11 +172,12 @@ private static boolean isStartupLaunch = true;
     // Participants who sent us their final score.
     Set<String> mFinishedParticipants = new HashSet<>();
     int mCurScreen = -1;
+    @Inject
+    TronViewModelFactory viewModelFactory;
     private boolean isRestarting;
     private TextView mStartGameCountdown;
     private ArrayList<ImageView> mPLayerLives = new ArrayList<>();
     private ArrayList<ImageView> mEnemyLives = new ArrayList<>();
-
     private boolean gameReady;
     // Client used to sign in with Google APIs
     private GoogleSignInClient mGoogleSignInClient = null;
@@ -313,6 +350,9 @@ private static boolean isStartupLaunch = true;
     private int mParticipantIndex;
     private GamePanel mGamePanel;
     private boolean isWaitingCollisionAck;
+    private ImageView backgroundImage;
+    private TronViewModel tronViewModel;
+    private Profile mProfile;
     // Called when we receive a real-time message from the network.
     // Messages in our game are made up of 2 bytes: the first one is 'F' or 'U'
     // indicating
@@ -379,9 +419,15 @@ private static boolean isStartupLaunch = true;
                 Log.i("COMM", sb.toString());
                 startGame(mMultiplayer);
             }
+            // Player info
+            else if (buf[0] == 'M') {
+                byte[] data = new byte[buf.length - 1];
+                System.arraycopy(buf, 1, data, 0, data.length);
+                SerializableProfile profile = SerializationUtils.deserialize(data);
+                tronViewModel.saveProfile(new Profile(profile.getName(), profile.getLocation(), profile.getPicture()));
+            }
         }
     };
-    private ImageView backgroundImage;
 
     public static byte[] intToByteArray(int anInteger) {
         return ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(anInteger).array();
@@ -476,9 +522,10 @@ private static boolean isStartupLaunch = true;
 
         setContentView(R.layout.activity_main);
 
-
+        // Get view model
+        tronViewModel = ViewModelProviders.of(this, viewModelFactory).get(TronViewModel.class);
         // Create the client used to sign in.
-        mGoogleSignInClient = GoogleSignIn.getClient(this, GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN);
+        mGoogleSignInClient = GoogleSignIn.getClient(this, new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN).requestProfile().build());
         // set up a click listener for everything we care about
         for (int id : CLICKABLES) {
             findViewById(id).setOnClickListener(this);
@@ -666,6 +713,20 @@ private static boolean isStartupLaunch = true;
                         if (task.isSuccessful()) {
                             Log.d(TAG, "signInSilently(): success");
                             onConnected(task.getResult());
+
+                            String name = mSignedInAccount.getDisplayName();
+                            if (name == null) {
+                                Log.d("ERR", "Can't get profile display name.");
+                            } else {
+                                tronViewModel.getProfile(name).observeForever(new Observer<Profile>() {
+                                    @Override
+                                    public void onChanged(@Nullable Profile profile) {
+                                        mProfile = profile;
+                                    }
+                                });
+                            }
+
+
                         } else {
                             Log.d(TAG, "signInSilently(): failure", task.getException());
                             onDisconnected();
@@ -1101,6 +1162,7 @@ private static boolean isStartupLaunch = true;
                     mParticipantIndex = i;
                 }
             }
+
             if (mParticipantIndex == 0) {
                 Log.v("COMM", "Broadcasting colors from " + mParticipants.get(mParticipantIndex).getParticipantId());
                 broadcastPlayersColor();
@@ -1114,6 +1176,7 @@ private static boolean isStartupLaunch = true;
         Log.i("COMM", "Restarting game call from " + mParticipants.get(mParticipantIndex).getParticipantId());
         if (!mMultiplayer) {
             startGame(mMultiplayer);
+
         } else {
             for (int i = 0; i < mParticipants.size(); i++) {
                 Participant participant = mParticipants.get(i);
@@ -1140,6 +1203,7 @@ private static boolean isStartupLaunch = true;
 
     // Start the gameplay phase of the game.
     void startGame(boolean multiplayer) {
+
         mMultiplayer = multiplayer;
 //        Intent intent = new Intent(this, Game.class);
 //        startActivity(intent);
@@ -1159,6 +1223,7 @@ private static boolean isStartupLaunch = true;
         gameScreen.removeView(mStartGameCountdown);
         Int2 playerPosition = new Int2(GRID_SIZE.x / 2, GRID_SIZE.y / 2);
         if (multiplayer) {
+            broadcastPlayerInfo();
             playerPosition = getInitialPosition(mParticipantIndex);
             int playerLives = mParticipantLives.get(mParticipants.get(mParticipantIndex).getParticipantId());
             for (int i = 0; i < 3; i++) {
@@ -1274,6 +1339,37 @@ private static boolean isStartupLaunch = true;
     }
 
     public void broadcastPlayerInfo() {
+        SerializableProfile serializableProfile = new SerializableProfile(mProfile);
+        byte[] bytes = SerializationUtils.serialize(serializableProfile);
+        byte[] msg = new byte[bytes.length + 1];
+        msg[0] = 'M';
+        System.arraycopy(bytes, 0, msg, 1, bytes.length);
+
+        for (Participant p : mParticipants) {
+            if (p.getParticipantId().equals(mMyId))
+                continue;
+
+            if (p.getStatus() != Participant.STATUS_JOINED)
+                continue;
+
+            mRealTimeMultiplayerClient.sendReliableMessage(msg,
+                    mRoomId, p.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
+                        @Override
+                        public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
+                            Log.d("COMM", "Profile info message sent");
+                            Log.d("COMM", "  recipientParticipantId: " + recipientParticipantId);
+                        }
+                    })
+                    .addOnSuccessListener(new OnSuccessListener<Integer>() {
+                        @Override
+                        public void onSuccess(Integer tokenId) {
+                            Log.d("COMM", "Profile info message with tokenId: " + tokenId);
+                        }
+                    });
+        }
+
+
+
 
     }
 
