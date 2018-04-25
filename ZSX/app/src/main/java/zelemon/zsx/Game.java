@@ -1251,6 +1251,9 @@ public class Game extends DaggerAppCompatActivity implements
         gameScreen.removeView(mStartGameCountdown);
         Int2 playerPosition = new Int2(GRID_SIZE.x / 2, GRID_SIZE.y / 2);
         if (multiplayer) {
+            if (mGamePanel != null) {
+                mGamePanel.resetTrailsAndEnemies();
+            }
             broadcastPlayerInfo();
             playerPosition = getInitialPosition(mParticipantIndex);
             int playerLives = mParticipantLives.get(mParticipants.get(mParticipantIndex).getParticipantId());
