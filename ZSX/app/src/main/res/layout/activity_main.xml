@@ -97,8 +97,17 @@
             android:text="@string/see_profile" />
 
         <TextView
-            style="@style/MainScreenButtonBlurb"
-            android:text="@string/see_profile_explanation" />
+                style="@style/MainScreenButtonBlurb"
+                android:text="@string/see_profile_explanation"/>
+
+        <Button
+                android:id="@+id/battery_viewer"
+                style="@style/MainScreenButton"
+                android:text="@string/see_battery"/>
+
+        <TextView
+                style="@style/MainScreenButtonBlurb"
+                android:text="@string/see_battery_explanation"/>
 
         <Button
             android:id="@+id/button_sign_out"

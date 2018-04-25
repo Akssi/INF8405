@@ -2,14 +2,16 @@ package zelemon.zsx;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.renderscript.Int2;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -51,6 +53,8 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
+import org.apache.commons.lang3.SerializationUtils;
+
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -64,6 +68,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+
+import javax.inject.Inject;
+
+import dagger.android.support.DaggerAppCompatActivity;
+import zelemon.zsx.battery.BatteryLiveData;
+import zelemon.zsx.battery.StatusActivity;
+import zelemon.zsx.dependencyInjection.TronViewModelFactory;
+import zelemon.zsx.persistence.database.Profile;
+import zelemon.zsx.persistence.database.SerializableProfile;
 
 
 /**
@@ -85,26 +98,8 @@ import java.util.Set;
  *
  * @author Bruno Oliveira (btco), 2013-04-26
  */
-public class Game extends AppCompatActivity implements
+public class Game extends DaggerAppCompatActivity implements
         View.OnClickListener {
-
-
-    final static String TAG = "ZSX";
-    // Request codes for the UIs that we show with startActivityForResult:
-    final static int RC_SELECT_PLAYERS = 10000;
-    final static int RC_INVITATION_INBOX = 10001;
-    final static int RC_WAITING_ROOM = 10002;
-
-    /*
-    * API INTEGRATION SECTION. This section contains the code that integrates
-    * the game with the Google Play game services API.
-    */
-
-    // Grid size
-    final static Int2 GRID_SIZE = new Int2(90, 132);
-    final static int QuarterX = GRID_SIZE.x / 4;
-    final static int MidY = GRID_SIZE.y / 2;
-    final static int ThreeQuarterX = 3 * GRID_SIZE.x / 4;
 
     // This array lists everything that's clickable, so we can install click
     // event handlers.
@@ -112,23 +107,39 @@ public class Game extends AppCompatActivity implements
             R.id.button_accept_popup_invitation, /*R.id.button_invite_players,*/
             R.id.button_quick_game, /*R.id.button_see_invitations,*/ R.id.button_sign_in,
             R.id.button_sign_out, R.id.button_single_player,
-            R.id.button_single_player_2, R.id.button_see_map, R.id.button_see_profile
+            R.id.button_single_player_2, R.id.button_see_map, R.id.button_see_profile, R.id.battery_viewer
     };
+    final static String TAG = "ZSX";
+    // Request codes for the UIs that we show with startActivityForResult:
+    final static int RC_SELECT_PLAYERS = 10000;
+    final static int RC_INVITATION_INBOX = 10001;
+    final static int RC_WAITING_ROOM = 10002;
+
+    /*
+     * API INTEGRATION SECTION. This section contains the code that integrates
+     * the game with the Google Play game services API.
+     */
+
+    // Grid size
+    final static Int2 GRID_SIZE = new Int2(90, 132);
+    final static int QuarterX = GRID_SIZE.x / 4;
+    final static int MidY = GRID_SIZE.y / 2;
+    final static int ThreeQuarterX = 3 * GRID_SIZE.x / 4;
+
     // This array lists all the individual screens our game has.
     final static int[] SCREENS = {
             R.id.screen_game, R.id.screen_main, R.id.screen_sign_in,
             R.id.screen_wait
     };
-
     final static int[] PLAYER_LIVES = {
             R.id.life3, R.id.life2, R.id.life1
     };
-
     final static int[] ENEMY_LIVES = {
             R.id.enemy_life3, R.id.enemy_life2, R.id.enemy_life1
     };
     // Request code used to invoke sign in user interactions.
     private static final int RC_SIGN_IN = 9001;
+    private static boolean isStartupLaunch = true;
     protected int playerColor = Color.CYAN;
     // Room ID where the currently active game is taking place; null if we're
     // not playing.
@@ -159,11 +170,12 @@ public class Game extends AppCompatActivity implements
     // Participants who sent us their final score.
     Set<String> mFinishedParticipants = new HashSet<>();
     int mCurScreen = -1;
+    @Inject
+    TronViewModelFactory viewModelFactory;
     private boolean isRestarting;
     private TextView mStartGameCountdown;
     private ArrayList<ImageView> mPLayerLives = new ArrayList<>();
     private ArrayList<ImageView> mEnemyLives = new ArrayList<>();
-
     private boolean gameReady;
     // Client used to sign in with Google APIs
     private GoogleSignInClient mGoogleSignInClient = null;
@@ -340,6 +352,8 @@ public class Game extends AppCompatActivity implements
     private TextView mLostOverlay;
     private boolean mIsGameFinished;
     private TextView mWonOverlay;
+    private TronViewModel tronViewModel;
+    private Profile mProfile;
     // Called when we receive a real-time message from the network.
     // Messages in our game are made up of 2 bytes: the first one is 'F' or 'U'
     // indicating
@@ -362,6 +376,9 @@ public class Game extends AppCompatActivity implements
                 sendCollisionAck(sender);
 //                Handler handler = new Handler();
 //                handler.postDelayed(new DelayedAck(sender), 1000);
+                if (isWaitingCollisionAck) {
+                    checkCollisionResolve();
+                }
 
 
             } else if (buf[0] == 'A' && !isRestarting) {
@@ -400,6 +417,13 @@ public class Game extends AppCompatActivity implements
                 sb.append(sender);
                 Log.i("COMM", sb.toString());
                 startGame(mMultiplayer);
+            }
+            // Player info
+            else if (buf[0] == 'M') {
+                byte[] data = new byte[buf.length - 1];
+                System.arraycopy(buf, 1, data, 0, data.length);
+                SerializableProfile profile = SerializationUtils.deserialize(data);
+                tronViewModel.saveProfile(new Profile(profile.getName(), profile.getLocation(), profile.getPicture()));
             }
         }
     };
@@ -511,11 +535,18 @@ public class Game extends AppCompatActivity implements
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Runs only once at startup
+        if (isStartupLaunch) {
+            BatteryLiveData.InitializeBatteryStatus(getApplicationContext());
+            isStartupLaunch = false;
+        }
+
         setContentView(R.layout.activity_main);
 
-
+        // Get view model
+        tronViewModel = ViewModelProviders.of(this, viewModelFactory).get(TronViewModel.class);
         // Create the client used to sign in.
-        mGoogleSignInClient = GoogleSignIn.getClient(this, GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN);
+        mGoogleSignInClient = GoogleSignIn.getClient(this, new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN).requestProfile().build());
         // set up a click listener for everything we care about
         for (int id : CLICKABLES) {
             findViewById(id).setOnClickListener(this);
@@ -673,6 +704,10 @@ public class Game extends AppCompatActivity implements
                 profileIntent.putExtra("signedInAccount", mSignedInAccount);
                 startActivity(profileIntent);
                 break;
+            case R.id.battery_viewer:
+                Intent batteryIntent = new Intent(this, StatusActivity.class);
+                startActivity(batteryIntent);
+                break;
         }
     }
 
@@ -716,6 +751,20 @@ public class Game extends AppCompatActivity implements
                         if (task.isSuccessful()) {
                             Log.d(TAG, "signInSilently(): success");
                             onConnected(task.getResult());
+
+                            String name = mSignedInAccount.getDisplayName();
+                            if (name == null) {
+                                Log.d("ERR", "Can't get profile display name.");
+                            } else {
+                                tronViewModel.getProfile(name).observeForever(new Observer<Profile>() {
+                                    @Override
+                                    public void onChanged(@Nullable Profile profile) {
+                                        mProfile = profile;
+                                    }
+                                });
+                            }
+
+
                         } else {
                             Log.d(TAG, "signInSilently(): failure", task.getException());
                             onDisconnected();
@@ -1152,6 +1201,7 @@ public class Game extends AppCompatActivity implements
                     mParticipantIndex = i;
                 }
             }
+
             if (mParticipantIndex == 0) {
                 Log.v("COMM", "Broadcasting colors from " + mParticipants.get(mParticipantIndex).getParticipantId());
                 broadcastPlayersColor();
@@ -1165,6 +1215,7 @@ public class Game extends AppCompatActivity implements
         Log.i("COMM", "Restarting game call from " + mParticipants.get(mParticipantIndex).getParticipantId());
         if (!mMultiplayer) {
             startGame(mMultiplayer);
+
         } else {
             for (int i = 0; i < mParticipants.size(); i++) {
                 Participant participant = mParticipants.get(i);
@@ -1189,6 +1240,7 @@ public class Game extends AppCompatActivity implements
 
     // Start the gameplay phase of the game.
     void startGame(boolean multiplayer) {
+
         mMultiplayer = multiplayer;
 //        Intent intent = new Intent(this, Game.class);
 //        startActivity(intent);
@@ -1209,6 +1261,7 @@ public class Game extends AppCompatActivity implements
         gameScreen.removeView(mStartGameCountdown);
         Int2 playerPosition = new Int2(GRID_SIZE.x / 2, GRID_SIZE.y / 2);
         if (multiplayer) {
+            broadcastPlayerInfo();
             playerPosition = getInitialPosition(mParticipantIndex);
             int playerLives = mParticipantLives.get(mParticipants.get(mParticipantIndex).getParticipantId());
             for (int i = 0; i < 3; i++) {
@@ -1325,7 +1378,38 @@ public class Game extends AppCompatActivity implements
         }
     }
 
-    public void broadcastPlayerInfo(){
+    public void broadcastPlayerInfo() {
+        SerializableProfile serializableProfile = new SerializableProfile(mProfile);
+        byte[] bytes = SerializationUtils.serialize(serializableProfile);
+        byte[] msg = new byte[bytes.length + 1];
+        msg[0] = 'M';
+        System.arraycopy(bytes, 0, msg, 1, bytes.length);
+
+        for (Participant p : mParticipants) {
+            if (p.getParticipantId().equals(mMyId))
+                continue;
+
+            if (p.getStatus() != Participant.STATUS_JOINED)
+                continue;
+
+            mRealTimeMultiplayerClient.sendReliableMessage(msg,
+                    mRoomId, p.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
+                        @Override
+                        public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
+                            Log.d("COMM", "Profile info message sent");
+                            Log.d("COMM", "  recipientParticipantId: " + recipientParticipantId);
+                        }
+                    })
+                    .addOnSuccessListener(new OnSuccessListener<Integer>() {
+                        @Override
+                        public void onSuccess(Integer tokenId) {
+                            Log.d("COMM", "Profile info message with tokenId: " + tokenId);
+                        }
+                    });
+        }
+
+
+
 
     }
 

@@ -37,16 +37,18 @@ import zelemon.zsx.persistence.database.Profile;
 public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener,ClusterManager.OnClusterClickListener<PlayerMarker> {
 
     private static final int PERMISSION_REQUEST_LOCATION = 0;
-    private GoogleMap mMap;
-    private LiveData<List<Profile>> mProfiles;
-    private LatLng currentCoordinates;
-    private TronViewModel tronViewModel;
-    private Location markerLocation = new Location(LocationManager.GPS_PROVIDER);
-    private final Observer<List<Profile>> profileCardObserver = this::showProfilesOnCard;
     @Inject
     TronViewModelFactory viewModelFactory;
-
+    private GoogleMap mMap;
+    private LiveData<List<Profile>> mProfiles;
+    private final Observer<List<Profile>> profileCardObserver = this::showProfilesOnCard;
+    private LatLng currentCoordinates;
     private final Observer<Location> locationObserver = this::updateCurrentLocationOnMap;
+    private TronViewModel tronViewModel;
+    private Location markerLocation = new Location(LocationManager.GPS_PROVIDER);
+    private ClusterManager<PlayerMarker> clusterManager;
+    private final Observer<List<Profile>> mapProfileObserver = this::displayProfilesOnMap;
+
     // From StackOverflow : https://stackoverflow.com/questions/837872/calculate-distance-in-meters-when-you-know-longitude-and-latitude-in-java
     private static float distFrom(float lat1, float lng1, float lat2, float lng2) {
         double earthRadius = 6371000; //meters
@@ -75,6 +77,11 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
 
     private void initializeObserver() {
         tronViewModel.getLocationLiveData().observe(this, this.locationObserver);
+        tronViewModel.getMapProfiles().observe(this, this.mapProfileObserver);
+
+        clusterManager = new ClusterManager<>(this, mMap);
+        mMap.setOnCameraIdleListener(clusterManager);
+        clusterManager.setOnClusterClickListener(this);
     }
 
     /**
@@ -87,6 +94,22 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
         mMap.setMyLocationEnabled(true);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentCoordinates, 15));
     }
+
+    /**
+     * Adds markers and clusters to the map given a list of known network
+     *
+     * @param profileList list of profile to display on map.
+     */
+    private void displayProfilesOnMap(List<Profile> profileList) {
+        clusterManager.clearItems();
+        for (Profile profile : profileList) {
+            LatLng playerLocation = new LatLng(profile.getLocation().getLatitude(), profile.getLocation().getLongitude());
+            PlayerMarker playerMarker = new PlayerMarker(playerLocation);
+            clusterManager.addItem(playerMarker);
+        }
+        clusterManager.cluster();
+    }
+
 
     /**
      * Manipulates the map once available.
