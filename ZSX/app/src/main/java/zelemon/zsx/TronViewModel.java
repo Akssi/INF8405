@@ -73,8 +73,8 @@ public class TronViewModel extends AndroidViewModel {
         });
     }
 
-    public LiveData<List<Profile>> getAllProfiles() {
-        return this.profileRepository.getAllProfiles();
+    public LiveData<List<Profile>> getAllProfilesWithoutOurDisplayName(String displayName) {
+        return this.profileRepository.getAllProfilesWithoutDisplayName(displayName);
     }
 
     public LiveData<List<Profile>> getProfilesSurroundingLocation(Location location) {

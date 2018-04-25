@@ -67,7 +67,17 @@ public class ProfileRepository {
         });
     }
 
-    public LiveData<List<Profile>> getAllProfiles() {
-        return profileDao.getProfiles();
+    public LiveData<List<Profile>> getAllProfilesWithoutDisplayName(String displayName) {
+        return Transformations.map(profileDao.getProfiles(), profiles -> {
+            List<Profile> closeByProfiles = new ArrayList<>();
+            if (displayName != null) {
+                for (Profile profile : profiles) {
+                    if (!profile.getName().equals(displayName)) {
+                        closeByProfiles.add(profile);
+                    }
+                }
+            }
+            return closeByProfiles;
+        });
     }
 }
