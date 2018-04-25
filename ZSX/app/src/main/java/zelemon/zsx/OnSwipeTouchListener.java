@@ -7,15 +7,61 @@ import android.view.View;
 
 public class OnSwipeTouchListener implements View.OnTouchListener {
 
+    private static final float MIN_DISTANCE = 100;
     public Context context;
     private GestureDetector gestureDetector;
+    private float y1;
+    private float x1;
+    private float x2;
+    private float y2;
+    private boolean moved;
 
     public OnSwipeTouchListener(Context c) {
         gestureDetector = new GestureDetector(c, new GestureListener());
     }
 
     public boolean onTouch(final View view, final MotionEvent motionEvent) {
-        return gestureDetector.onTouchEvent(motionEvent);
+        switch (motionEvent.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                x1 = motionEvent.getX();
+                y1 = motionEvent.getY();
+                moved = false;
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if (moved) {
+                    return true;
+                }
+                x2 = motionEvent.getX();
+                y2 = motionEvent.getY();
+                float deltaX = x2 - x1;
+                float deltaY = y2 - y1;
+                float max = Math.max(Math.abs(deltaX), Math.abs(deltaY));
+                if (Math.abs(deltaX) == max && Math.abs(deltaX) > MIN_DISTANCE) {
+                    // Left to Right swipe action
+                    if (x2 > x1) {
+                        onSwipeRight();
+                    }
+
+                    // Right to left swipe action
+                    else {
+                        onSwipeLeft();
+                    }
+
+                } else if (Math.abs(deltaY) == max && Math.abs(deltaY) > MIN_DISTANCE) {
+                    // Left to Right swipe action
+                    if (y2 > y1) {
+                        onSwipeDown();
+                    }
+
+                    // Right to left swipe action
+                    else {
+                        onSwipeUp();
+                    }
+
+                }
+                break;
+        }
+        return true;
     }
 
     public void onSwipeRight() {
@@ -36,7 +82,7 @@ public class OnSwipeTouchListener implements View.OnTouchListener {
 
     private final class GestureListener extends GestureDetector.SimpleOnGestureListener {
 
-        private static final int SWIPE_THRESHOLD = 100;
+        private static final int SWIPE_THRESHOLD = 10;
         private static final int SWIPE_VELOCITY_THRESHOLD = 100;
 
         @Override
