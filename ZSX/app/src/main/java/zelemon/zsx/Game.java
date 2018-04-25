@@ -13,38 +13,70 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.util.Log;
-import android.view.*;
+import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.SurfaceView;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.games.*;
+import com.google.android.gms.games.Games;
+import com.google.android.gms.games.GamesActivityResultCodes;
+import com.google.android.gms.games.GamesCallbackStatusCodes;
+import com.google.android.gms.games.GamesClient;
+import com.google.android.gms.games.GamesClientStatusCodes;
+import com.google.android.gms.games.InvitationsClient;
+import com.google.android.gms.games.PlayersClient;
+import com.google.android.gms.games.RealTimeMultiplayerClient;
 import com.google.android.gms.games.multiplayer.Invitation;
 import com.google.android.gms.games.multiplayer.InvitationCallback;
 import com.google.android.gms.games.multiplayer.Multiplayer;
 import com.google.android.gms.games.multiplayer.Participant;
-import com.google.android.gms.games.multiplayer.realtime.*;
+import com.google.android.gms.games.multiplayer.realtime.OnRealTimeMessageReceivedListener;
+import com.google.android.gms.games.multiplayer.realtime.RealTimeMessage;
+import com.google.android.gms.games.multiplayer.realtime.Room;
+import com.google.android.gms.games.multiplayer.realtime.RoomConfig;
+import com.google.android.gms.games.multiplayer.realtime.RoomStatusUpdateCallback;
+import com.google.android.gms.games.multiplayer.realtime.RoomUpdateCallback;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import dagger.android.support.DaggerAppCompatActivity;
+
 import org.apache.commons.lang3.SerializationUtils;
+
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+
+import javax.inject.Inject;
+
+import dagger.android.support.DaggerAppCompatActivity;
 import zelemon.zsx.battery.BatteryLiveData;
 import zelemon.zsx.battery.StatusActivity;
 import zelemon.zsx.dependencyInjection.TronViewModelFactory;
 import zelemon.zsx.persistence.database.Profile;
 import zelemon.zsx.persistence.database.SerializableProfile;
-
-import javax.inject.Inject;
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.*;
 
 
 /**
@@ -1277,7 +1309,12 @@ public class Game extends DaggerAppCompatActivity implements
         randomColor[0] = rand.nextFloat() * 360;
         randomColor[1] = 1.0f;
         randomColor[2] = 1.0f;
-        int color = Color.HSVToColor(randomColor);
+        //int color = Color.HSVToColor(randomColor);
+
+        String[] colors = {"#76FF03", "#FF3D00", "#18FFFF", "#FFFF00", "#E040FB", "#FF5252"};
+        int colorIndex = rand.nextInt(colors.length);
+        int color = Color.parseColor(colors[colorIndex]);
+
         playerColor = color;
 
         mMsgBuf[0] = (byte) 'I';
@@ -1298,8 +1335,12 @@ public class Game extends DaggerAppCompatActivity implements
                 float[] hsv = new float[3];
                 Color.colorToHSV(color, hsv);
                 hsv[0] = (hsv[0] + 0.25f) * 360 % 360;
-                color = Color.HSVToColor(hsv);
+                //color = Color.HSVToColor(hsv);
 
+                while (color == playerColor) {
+                    colorIndex = rand.nextInt(colors.length);
+                    color = Color.parseColor(colors[colorIndex]);
+                }
                 // Create Enemy for host
                 mParticipantEnemy.put(participant.getParticipantId(), new Enemy(color, getInitialPosition(i), GRID_SIZE));
 

@@ -47,7 +47,7 @@ public class Enemy implements GameObject {
         paint.setColor(enemyColor);
         canvas.drawRect(enemySprite, paint);
 
-        paint.setAlpha(50);
+        paint.setAlpha(150);
 
         //for(Rect rect : trail)
         for (int i = 0; i < trail.size(); i++)
