@@ -6,15 +6,13 @@ import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Transformations;
 import android.location.Location;
 import android.support.annotation.NonNull;
-
-import java.util.List;
-
-import javax.inject.Inject;
-
 import zelemon.zsx.battery.BatteryLiveData;
 import zelemon.zsx.persistence.ProfileRepository;
 import zelemon.zsx.persistence.database.Profile;
 import zelemon.zsx.services.LocationLiveData;
+
+import javax.inject.Inject;
+import java.util.List;
 
 /**
  * View model that holds part of the logic of the app.
@@ -73,6 +71,10 @@ public class TronViewModel extends AndroidViewModel {
             this.currentLocation = location;
             return this.profileRepository.getMapProfiles(this.currentLocation);
         });
+    }
+
+    public LiveData<List<Profile>> getAllProfiles() {
+        return this.profileRepository.getAllProfiles();
     }
 
     public LiveData<List<Profile>> getProfilesSurroundingLocation(Location location) {

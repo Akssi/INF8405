@@ -75,7 +75,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
 
     private void initializeObserver() {
         tronViewModel.getLocationLiveData().observe(this, this.locationObserver);
-        tronViewModel.getMapProfiles().observe(this, this.mapProfileObserver);
+        tronViewModel.getAllProfiles().observe(this, this.mapProfileObserver);
 
         clusterManager = new ClusterManager<>(this, mMap);
         mMap.setOnCameraIdleListener(clusterManager);

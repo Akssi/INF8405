@@ -66,4 +66,8 @@ public class ProfileRepository {
             return closeByProfiles;
         });
     }
+
+    public LiveData<List<Profile>> getAllProfiles() {
+        return profileDao.getProfiles();
+    }
 }
