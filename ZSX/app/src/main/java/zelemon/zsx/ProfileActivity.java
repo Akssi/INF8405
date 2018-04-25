@@ -12,9 +12,11 @@ import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.ImageView;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -24,12 +26,13 @@ import zelemon.zsx.persistence.database.PictureTypeConverter;
 import zelemon.zsx.persistence.database.Profile;
 
 import javax.inject.Inject;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 
 public class ProfileActivity extends DaggerAppCompatActivity {
 
     private static final int PERMISSION_REQUEST_LOCATION = 0;
+    private static final int REQUEST_IMAGE_CAPTURE = 1;
     @Inject
     ViewModelProvider.Factory viewModelFactory;
     private TronViewModel tronViewModel;
@@ -78,9 +81,18 @@ public class ProfileActivity extends DaggerAppCompatActivity {
         mProfilePhoto = findViewById(R.id.profile_photo);
         Button choosePhotoButton = findViewById(R.id.button_choose_photo);
         choosePhotoButton.setOnClickListener(v -> {
-            Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
-            photoPickerIntent.setType("image/*");
-            startActivityForResult(photoPickerIntent, 0);
+            // Take existing image
+            Intent takeImage = new Intent(Intent.ACTION_GET_CONTENT, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+
+            // Take a picture with hardware
+            Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+            //Used to make a menu so the user can select which option he likes
+            Intent chooser = Intent.createChooser(takeImage, "Select image or take a picture");
+            chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{
+                    takePictureIntent
+            });
+            startActivityForResult(chooser, REQUEST_IMAGE_CAPTURE);
         });
 
     }
@@ -117,15 +129,28 @@ public class ProfileActivity extends DaggerAppCompatActivity {
     @Override
     protected void onActivityResult(int reqCode, int resultCode, Intent data) {
         super.onActivityResult(reqCode, resultCode, data);
-        if (resultCode == RESULT_OK) {
-            try {
-                final Uri imageUri = data.getData();
-                final InputStream imageStream = getContentResolver().openInputStream(imageUri);
-                final Bitmap selectedImage = BitmapFactory.decodeStream(imageStream);
-                mProfilePhoto.setImageBitmap(selectedImage);
-                saveToDatabase(selectedImage);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
+
+        if (reqCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+            if (data.getExtras() != null) {
+                try {
+                    Bundle extras = data.getExtras();
+                    final Bitmap selectedImage = (Bitmap) extras.get("data");
+                    mProfilePhoto.setImageBitmap(selectedImage);
+                    saveToDatabase(selectedImage);
+                } catch (Exception e) {
+                    Log.e("IMG", "Can't load image from source");
+                }
+            } else {
+                try {
+                    final Uri imageUri = data.getData();
+                    final InputStream imageStream = getContentResolver().openInputStream(imageUri);
+                    final Bitmap selectedImage = BitmapFactory.decodeStream(imageStream);
+                    mProfilePhoto.setImageBitmap(selectedImage);
+                    saveToDatabase(selectedImage);
+                } catch (IOException e) {
+                    Log.e("IMG", "error while reading uri media");
+
+                }
             }
         }
     }
