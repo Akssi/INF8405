@@ -28,7 +28,7 @@
     <string name="see_map_explanation">See your friends on the map.</string>
     <string name="see_profile">Profile</string>
     <string name="see_profile_explanation">Edit your profile.</string>
-    <string name="see_battery">Battery Status</string>
+    <string name="see_battery">Status</string>
     <string name="see_battery_explanation">View Battery and Bandwidth Consumption.</string>
     <string name="quick_game_explanation">Challenge a random opponent.</string>
     <string name="invite_players_explanation">Invite friends to play a game.</string>
