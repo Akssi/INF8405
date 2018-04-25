@@ -11,57 +11,31 @@ import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.KeyEvent;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.SurfaceView;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.WindowManager;
+import android.view.*;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.games.Games;
-import com.google.android.gms.games.GamesActivityResultCodes;
-import com.google.android.gms.games.GamesCallbackStatusCodes;
-import com.google.android.gms.games.GamesClient;
-import com.google.android.gms.games.GamesClientStatusCodes;
-import com.google.android.gms.games.InvitationsClient;
-import com.google.android.gms.games.PlayersClient;
-import com.google.android.gms.games.RealTimeMultiplayerClient;
+import com.google.android.gms.games.*;
 import com.google.android.gms.games.multiplayer.Invitation;
 import com.google.android.gms.games.multiplayer.InvitationCallback;
 import com.google.android.gms.games.multiplayer.Multiplayer;
 import com.google.android.gms.games.multiplayer.Participant;
-import com.google.android.gms.games.multiplayer.realtime.OnRealTimeMessageReceivedListener;
-import com.google.android.gms.games.multiplayer.realtime.RealTimeMessage;
-import com.google.android.gms.games.multiplayer.realtime.Room;
-import com.google.android.gms.games.multiplayer.realtime.RoomConfig;
-import com.google.android.gms.games.multiplayer.realtime.RoomStatusUpdateCallback;
-import com.google.android.gms.games.multiplayer.realtime.RoomUpdateCallback;
+import com.google.android.gms.games.multiplayer.realtime.*;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import zelemon.zsx.battery.BatteryLiveData;
+import zelemon.zsx.battery.StatusActivity;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 
 /**
@@ -86,7 +60,14 @@ import java.util.Set;
 public class Game extends AppCompatActivity implements
         View.OnClickListener {
 
-
+    // This array lists everything that's clickable, so we can install click
+    // event handlers.
+    final static int[] CLICKABLES = {
+            R.id.button_accept_popup_invitation, /*R.id.button_invite_players,*/
+            R.id.button_quick_game, /*R.id.button_see_invitations,*/ R.id.button_sign_in,
+            R.id.button_sign_out, R.id.button_single_player,
+            R.id.button_single_player_2, R.id.button_see_map, R.id.button_see_profile, R.id.battery_viewer
+    };
     final static String TAG = "ZSX";
     // Request codes for the UIs that we show with startActivityForResult:
     final static int RC_SELECT_PLAYERS = 10000;
@@ -94,9 +75,9 @@ public class Game extends AppCompatActivity implements
     final static int RC_WAITING_ROOM = 10002;
 
     /*
-    * API INTEGRATION SECTION. This section contains the code that integrates
-    * the game with the Google Play game services API.
-    */
+     * API INTEGRATION SECTION. This section contains the code that integrates
+     * the game with the Google Play game services API.
+     */
 
     // Grid size
     final static Int2 GRID_SIZE = new Int2(90, 132);
@@ -109,15 +90,7 @@ public class Game extends AppCompatActivity implements
 //            new Int2(3 * GRID_SIZE.x / 4, GRID_SIZE.y / 4),
 //            new Int2(GRID_SIZE.x / 4, 3 * GRID_SIZE.y / 4),
 //            new Int2(3 * GRID_SIZE.x / 4, 3 * GRID_SIZE.y / 4)};
-
-    // This array lists everything that's clickable, so we can install click
-    // event handlers.
-    final static int[] CLICKABLES = {
-            R.id.button_accept_popup_invitation, /*R.id.button_invite_players,*/
-            R.id.button_quick_game, /*R.id.button_see_invitations,*/ R.id.button_sign_in,
-            R.id.button_sign_out, R.id.button_single_player,
-            R.id.button_single_player_2, R.id.button_see_map, R.id.button_see_profile
-    };
+private static boolean isStartupLaunch = true;
     // This array lists all the individual screens our game has.
     final static int[] SCREENS = {
             R.id.screen_game, R.id.screen_main, R.id.screen_sign_in,
@@ -495,6 +468,12 @@ public class Game extends AppCompatActivity implements
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Runs only once at startup
+        if (isStartupLaunch) {
+            BatteryLiveData.InitializeBatteryStatus(getApplicationContext());
+            isStartupLaunch = false;
+        }
+
         setContentView(R.layout.activity_main);
 
 
@@ -639,6 +618,10 @@ public class Game extends AppCompatActivity implements
                 Intent profileIntent = new Intent(this, ProfileActivity.class);
                 profileIntent.putExtra("signedInAccount", mSignedInAccount);
                 startActivity(profileIntent);
+                break;
+            case R.id.battery_viewer:
+                Intent batteryIntent = new Intent(this, StatusActivity.class);
+                startActivity(batteryIntent);
                 break;
         }
     }
@@ -1290,7 +1273,7 @@ public class Game extends AppCompatActivity implements
         }
     }
 
-    public void broadcastPlayerInfo(){
+    public void broadcastPlayerInfo() {
 
     }
 
