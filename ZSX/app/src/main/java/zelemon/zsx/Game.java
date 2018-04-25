@@ -74,8 +74,7 @@ public class Game extends DaggerAppCompatActivity implements
     final static int[] CLICKABLES = {
             R.id.button_accept_popup_invitation, /*R.id.button_invite_players,*/
             R.id.button_quick_game, /*R.id.button_see_invitations,*/ R.id.button_sign_in,
-            R.id.button_sign_out, R.id.button_single_player,
-            R.id.button_single_player_2, R.id.button_see_map, R.id.button_see_profile, R.id.battery_viewer
+            R.id.button_sign_out, R.id.button_see_map, R.id.button_see_profile, R.id.battery_viewer
     };
     final static String TAG = "ZSX";
     // Request codes for the UIs that we show with startActivityForResult:
@@ -603,12 +602,6 @@ public class Game extends DaggerAppCompatActivity implements
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.button_single_player:
-            case R.id.button_single_player_2:
-                // play a single-player game
-                resetGameVars();
-                startGame(false);
-                break;
             case R.id.button_sign_in:
                 // start the sign-in flow
                 Log.d(TAG, "Sign-in button clicked");
