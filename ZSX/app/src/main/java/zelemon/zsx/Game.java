@@ -1309,7 +1309,12 @@ public class Game extends DaggerAppCompatActivity implements
         randomColor[0] = rand.nextFloat() * 360;
         randomColor[1] = 1.0f;
         randomColor[2] = 1.0f;
-        int color = Color.HSVToColor(randomColor);
+        //int color = Color.HSVToColor(randomColor);
+
+        String[] colors = {"#76FF03", "#FF3D00", "#18FFFF", "#FFFF00", "#E040FB", "#FF5252"};
+        int colorIndex = rand.nextInt(colors.length);
+        int color = Color.parseColor(colors[colorIndex]);
+
         playerColor = color;
 
         mMsgBuf[0] = (byte) 'I';
@@ -1330,8 +1335,12 @@ public class Game extends DaggerAppCompatActivity implements
                 float[] hsv = new float[3];
                 Color.colorToHSV(color, hsv);
                 hsv[0] = (hsv[0] + 0.25f) * 360 % 360;
-                color = Color.HSVToColor(hsv);
+                //color = Color.HSVToColor(hsv);
 
+                while (color == playerColor) {
+                    colorIndex = rand.nextInt(colors.length);
+                    color = Color.parseColor(colors[colorIndex]);
+                }
                 // Create Enemy for host
                 mParticipantEnemy.put(participant.getParticipantId(), new Enemy(color, getInitialPosition(i), GRID_SIZE));
 

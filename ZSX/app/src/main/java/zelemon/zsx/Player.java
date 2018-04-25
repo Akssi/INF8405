@@ -66,7 +66,7 @@ public class Player implements GameObject {
         paint.setColor(playerColor);
         canvas.drawRect(playerSprite, paint);
 
-        paint.setAlpha(75);
+        paint.setAlpha(150);
         for(Rect rect : trail)
             canvas.drawRect(rect, paint);
     }
