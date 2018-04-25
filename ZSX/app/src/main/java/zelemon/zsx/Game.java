@@ -376,10 +376,6 @@ public class Game extends DaggerAppCompatActivity implements
                 sendCollisionAck(sender);
 //                Handler handler = new Handler();
 //                handler.postDelayed(new DelayedAck(sender), 1000);
-                if (isWaitingCollisionAck) {
-                    checkCollisionResolve();
-                }
-
 
             } else if (buf[0] == 'A' && !isRestarting) {
                 Log.i("COMM", "ACK COLLISION message received");
