@@ -14,11 +14,13 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -103,12 +105,6 @@ public class Game extends AppCompatActivity implements
     final static int QuarterX = GRID_SIZE.x / 4;
     final static int MidY = GRID_SIZE.y / 2;
     final static int ThreeQuarterX = 3 * GRID_SIZE.x / 4;
-
-//    final static Int2[] THREE_PLUS_PLAYER_START = new Int2[]{
-//            new Int2(GRID_SIZE.x / 4, GRID_SIZE.y / 4),
-//            new Int2(3 * GRID_SIZE.x / 4, GRID_SIZE.y / 4),
-//            new Int2(GRID_SIZE.x / 4, 3 * GRID_SIZE.y / 4),
-//            new Int2(3 * GRID_SIZE.x / 4, 3 * GRID_SIZE.y / 4)};
 
     // This array lists everything that's clickable, so we can install click
     // event handlers.
@@ -340,6 +336,10 @@ public class Game extends AppCompatActivity implements
     private int mParticipantIndex;
     private GamePanel mGamePanel;
     private boolean isWaitingCollisionAck;
+    private ImageView backgroundImage;
+    private TextView mLostOverlay;
+    private boolean mIsGameFinished;
+    private TextView mWonOverlay;
     // Called when we receive a real-time message from the network.
     // Messages in our game are made up of 2 bytes: the first one is 'F' or 'U'
     // indicating
@@ -357,16 +357,11 @@ public class Game extends AppCompatActivity implements
                 Log.i("COMM", "\tfrom " + sender);
                 mFinishedParticipants.add(sender);
                 mParticipantLives.put(sender, mParticipantLives.get(sender) - 1);
-                // update the scores on the screen
-//                updatePeerScoresDisplay();
 
                 mGamePanel.stopGameUpdate();
                 sendCollisionAck(sender);
 //                Handler handler = new Handler();
 //                handler.postDelayed(new DelayedAck(sender), 1000);
-                if (isWaitingCollisionAck) {
-                    checkCollisionResolve();
-                }
 
 
             } else if (buf[0] == 'A' && !isRestarting) {
@@ -408,7 +403,8 @@ public class Game extends AppCompatActivity implements
             }
         }
     };
-    private ImageView backgroundImage;
+    private ConstraintLayout mGameScreen;
+    private LinearLayout mFinishedGameButton;
 
     public static byte[] intToByteArray(int anInteger) {
         return ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(anInteger).array();
@@ -449,7 +445,27 @@ public class Game extends AppCompatActivity implements
 
     private void checkCollisionResolve() {
         if (mFinishedParticipants.size() == mParticipants.size()) {
+            for (Participant participant : mParticipants) {
+                // If either player is dead restart game
+                if (mParticipantLives.get(participant.getParticipantId()) <= 0) {
+                    if (participant.getParticipantId().equals(mParticipants.get(mParticipantIndex).getParticipantId())) {
+                        mLostOverlay.setVisibility(View.VISIBLE);
+                        Log.v("ZSX", "You lost!" + mParticipants.get(mParticipantIndex).getParticipantId());
+                    }
+                    mIsGameFinished = true;
+                }
+            }
+            if (mIsGameFinished) {
+                if (mLostOverlay.getVisibility() == View.GONE) {
+                    mWonOverlay.setVisibility(View.VISIBLE);
+                    Log.v("ZSX", "You won!" + mParticipants.get(mParticipantIndex).getParticipantId());
+                }
+                Log.v("ZSX", "Game finished" + mParticipants.get(mParticipantIndex).getParticipantId());
+                return;
+            }
             restartGame();
+        } else {
+            Log.v("COMM", "Collision resolve failed for " + mParticipants.get(mParticipantIndex).getParticipantId());
         }
     }
 
@@ -511,6 +527,23 @@ public class Game extends AppCompatActivity implements
             mEnemyLives.add(findViewById(id));
         }
         backgroundImage = findViewById(R.id.screen_game_background);
+        mLostOverlay = findViewById(R.id.game_lost_overlay);
+        mWonOverlay = findViewById(R.id.game_won_overlay);
+
+        mLostOverlay.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View arg0, MotionEvent arg1) {
+                leaveGameScreen(arg0);
+                return true;
+            }
+        });
+        mWonOverlay.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View arg0, MotionEvent arg1) {
+                leaveGameScreen(arg0);
+                return true;
+            }
+        });
 
         switchToMainScreen();
         checkPlaceholderIds();
@@ -1065,6 +1098,7 @@ public class Game extends AppCompatActivity implements
     // Reset game variables in preparation for a new game.
     void resetGameVars() {
         mScore = 0;
+        mIsGameFinished = false;
         mParticipantLives.clear();
         mParticipantEnemy.clear();
         mFinishedParticipants.clear();
@@ -1084,8 +1118,8 @@ public class Game extends AppCompatActivity implements
                         @Override
                         public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
                             Log.d("COMM", "START message sent");
-                            Log.d("COMM", "  statusCode: " + statusCode);
-                            Log.d("COMM", "  tokenId: " + tokenId);
+//                            Log.d("COMM", "  statusCode: " + statusCode);
+//                            Log.d("COMM", "  tokenId: " + tokenId);
                             Log.d("COMM", "  recipientParticipantId: " + recipientParticipantId);
                         }
                     })
@@ -1134,10 +1168,6 @@ public class Game extends AppCompatActivity implements
         } else {
             for (int i = 0; i < mParticipants.size(); i++) {
                 Participant participant = mParticipants.get(i);
-                if (mParticipantLives.get(participant.getParticipantId()) <= 0) {
-                    this.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
-                    this.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BACK));
-                }
                 if (i != mParticipantIndex) {
                     Enemy enemy = mParticipantEnemy.get(participant.getParticipantId());
                     enemy.setEnemyPosition(getInitialPosition(i));
@@ -1151,6 +1181,8 @@ public class Game extends AppCompatActivity implements
 
                 broadcastGameStart();
                 startGame(mMultiplayer);
+            } else {
+                Log.v("COMM", "Waiting for game restart (" + mParticipants.get(mParticipantIndex).getParticipantId() + ")");
             }
         }
     }
@@ -1171,6 +1203,7 @@ public class Game extends AppCompatActivity implements
         ViewGroup.LayoutParams params = viewTemplate.getLayoutParams();
         gameScreen.removeView(viewTemplate);
 
+        backgroundImage.setBackgroundColor(playerColor);
         mStartGameCountdown = findViewById(R.id.start_countdown);
         ViewGroup.LayoutParams textViewParam = mStartGameCountdown.getLayoutParams();
         gameScreen.removeView(mStartGameCountdown);
@@ -1194,9 +1227,15 @@ public class Game extends AppCompatActivity implements
                 }
             }
         }
+        gameScreen.removeView(mWonOverlay);
+        gameScreen.removeView(mLostOverlay);
         mGamePanel = new GamePanel(this, GRID_SIZE, playerPosition);
         gameScreen.addView(mGamePanel, params);
         gameScreen.addView(mStartGameCountdown, textViewParam);
+        gameScreen.addView(mWonOverlay);
+        gameScreen.addView(mLostOverlay);
+        mLostOverlay.setVisibility(View.GONE);
+        mWonOverlay.setVisibility(View.GONE);
         switchToScreen(R.id.screen_game);
 
         mStartGameCountdown.setVisibility(View.VISIBLE);
@@ -1229,9 +1268,6 @@ public class Game extends AppCompatActivity implements
         randomColor[2] = 1.0f;
         int color = Color.HSVToColor(randomColor);
         playerColor = color;
-
-        backgroundImage.setBackgroundColor(playerColor);
-
 
         mMsgBuf[0] = (byte) 'I';
 
@@ -1275,16 +1311,15 @@ public class Game extends AppCompatActivity implements
                     mRoomId, participant.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
                         @Override
                         public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
-                            Log.d("COMM", "COLOR message sent");
 //                            Log.d(TAG, "  statusCode: " + statusCode);
 //                            Log.d(TAG, "  tokenId: " + tokenId);
-                            Log.d("COMM", "  recipientParticipantId: " + recipientParticipantId);
+                            Log.d("COMM", "Sending COLOR message to " + recipientParticipantId);
                         }
                     })
                     .addOnSuccessListener(new OnSuccessListener<Integer>() {
                         @Override
                         public void onSuccess(Integer tokenId) {
-                            Log.d("COMM", "COLOR message with tokenId: " + tokenId);
+                            Log.d("COMM", "COLOR message sent");
                         }
                     });
         }
@@ -1310,7 +1345,7 @@ public class Game extends AppCompatActivity implements
         }
         msgCollBuf[0] = (byte) 'C';
         isWaitingCollisionAck = true;
-        mFinishedParticipants.add(mPlayerId);
+        mFinishedParticipants.add(mParticipants.get(mParticipantIndex).getParticipantId());
         mParticipantLives.put(mParticipants.get(mParticipantIndex).getParticipantId(), mParticipantLives.get(mParticipants.get(mParticipantIndex).getParticipantId()) - 1);
         // Send to every other participant.
         for (Participant p : mParticipants) {
@@ -1325,16 +1360,15 @@ public class Game extends AppCompatActivity implements
                     mRoomId, p.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
                         @Override
                         public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
-                            Log.d("COMM", "COLLISION message sent");
 //                            Log.d(TAG, "  statusCode: " + statusCode);
 //                            Log.d(TAG, "  tokenId: " + tokenId);
-                            Log.d("COMM", "  recipientParticipantId: " + recipientParticipantId);
+                            Log.d("COMM", "Sending COLLISION message to " + recipientParticipantId);
                         }
                     })
                     .addOnSuccessListener(new OnSuccessListener<Integer>() {
                         @Override
                         public void onSuccess(Integer tokenId) {
-                            Log.d("COMM", "COLLISION message with tokenId: " + tokenId);
+                            Log.d("COMM", "COLLISION message sent");
                         }
                     });
         }
@@ -1359,20 +1393,19 @@ public class Game extends AppCompatActivity implements
                     mRoomId, participantId, new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
                         @Override
                         public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
-                            Log.d("COMM", "ACK COLLISION message sent");
 //                            Log.d(TAG, "  statusCode: " + statusCode);
 //                            Log.d(TAG, "  tokenId: " + tokenId);
-                            Log.d("COMM", "  recipientParticipantId: " + recipientParticipantId);
+                            Log.d("COMM", "Sending ACK COLLISION message to " + recipientParticipantId);
                         }
                     })
                     .addOnSuccessListener(new OnSuccessListener<Integer>() {
                         @Override
                         public void onSuccess(Integer tokenId) {
-                            if (!isWaitingCollisionAck && !isRestarting) {
-                                mFinishedParticipants.add(mPlayerId);
+                            Log.d("COMM", "ACK COLLISION message sent");
+                            if (!isWaitingCollisionAck) {
+                                mFinishedParticipants.add(mParticipants.get(mParticipantIndex).getParticipantId());
                                 checkCollisionResolve();
                             }
-                            Log.d("COMM", "ACK COLLISION message with tokenId: " + tokenId);
                         }
                     });
         }
@@ -1604,6 +1637,13 @@ public class Game extends AppCompatActivity implements
     // Clears the flag that keeps the screen on.
     void stopKeepingScreenOn() {
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
+
+    public void leaveGameScreen(View view) {
+        if (mIsGameFinished) {
+            resetGameVars();
+            leaveRoom();
+        }
     }
 
     private class DelayedAck implements Runnable {
