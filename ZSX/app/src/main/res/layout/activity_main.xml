@@ -22,7 +22,10 @@
 
 
     <!-- SIGN-IN SCREEN -->
-
+    <SurfaceView
+            android:id="@+id/surface"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"/>
     <LinearLayout
         android:id="@+id/screen_sign_in"
         style="@style/LLScreen">
@@ -33,11 +36,6 @@
             android:id="@+id/button_sign_in"
             style="@style/SignInButton" />
     </LinearLayout>
-
-    <SurfaceView
-        android:id="@+id/surface"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent" />
 
     <!-- MAIN SCREEN -->
     <LinearLayout
