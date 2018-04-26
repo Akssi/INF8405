@@ -32,6 +32,7 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -276,6 +277,7 @@ public class Game extends DaggerAppCompatActivity implements
 
                         public void onFinish() {
                             Log.v("ZSX", "WIFI timeout");
+                            Toast.makeText(getApplicationContext(), "Connection to opponent was lost", Toast.LENGTH_SHORT).show();
                             resetGameVars();
                             leaveRoom();
                         }
@@ -1461,6 +1463,7 @@ public class Game extends DaggerAppCompatActivity implements
 
                 public void onFinish() {
                     Log.v("ZSX", "WIFI timeout");
+                    Toast.makeText(getApplicationContext(), "Connection to opponent was lost", Toast.LENGTH_SHORT).show();
                     resetGameVars();
                     leaveRoom();
                 }
