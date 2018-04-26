@@ -11,7 +11,7 @@ import android.widget.TextView;
 
 import zelemon.zsx.R;
 import zelemon.zsx.persistence.database.PictureTypeConverter;
-import zelemon.zsx.persistence.database.Profile;
+import zelemon.zsx.persistence.database.SerializableProfile;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -20,7 +20,7 @@ import zelemon.zsx.persistence.database.Profile;
  */
 public class CardFragment extends DialogFragment {
     private static final String ARG_PROFILE = "profile";
-    private Profile mProfile;
+    private SerializableProfile mProfile;
 
     public CardFragment() {
         // Required empty public constructor
@@ -33,7 +33,7 @@ public class CardFragment extends DialogFragment {
      * @param profile The profile to be displayed on a card.
      * @return A new instance of fragment Card.
      */
-    public static CardFragment newInstance(Profile profile) {
+    public static CardFragment newInstance(SerializableProfile profile) {
         CardFragment fragment = new CardFragment();
         Bundle args = new Bundle();
         args.putSerializable(ARG_PROFILE, profile);
@@ -45,7 +45,7 @@ public class CardFragment extends DialogFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            mProfile = (Profile)getArguments().getSerializable(ARG_PROFILE);
+            mProfile = (SerializableProfile) getArguments().getSerializable(ARG_PROFILE);
         }
     }
 
