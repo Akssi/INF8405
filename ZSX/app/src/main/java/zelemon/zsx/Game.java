@@ -16,72 +16,39 @@ import android.renderscript.Int2;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.util.Log;
-import android.view.KeyEvent;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.MotionEvent;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.WindowManager;
+import android.view.*;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.games.Games;
-import com.google.android.gms.games.GamesActivityResultCodes;
-import com.google.android.gms.games.GamesCallbackStatusCodes;
-import com.google.android.gms.games.GamesClient;
-import com.google.android.gms.games.GamesClientStatusCodes;
-import com.google.android.gms.games.InvitationsClient;
-import com.google.android.gms.games.PlayersClient;
-import com.google.android.gms.games.RealTimeMultiplayerClient;
+import com.google.android.gms.games.*;
 import com.google.android.gms.games.multiplayer.Invitation;
 import com.google.android.gms.games.multiplayer.InvitationCallback;
 import com.google.android.gms.games.multiplayer.Multiplayer;
 import com.google.android.gms.games.multiplayer.Participant;
-import com.google.android.gms.games.multiplayer.realtime.OnRealTimeMessageReceivedListener;
-import com.google.android.gms.games.multiplayer.realtime.RealTimeMessage;
-import com.google.android.gms.games.multiplayer.realtime.Room;
-import com.google.android.gms.games.multiplayer.realtime.RoomConfig;
-import com.google.android.gms.games.multiplayer.realtime.RoomStatusUpdateCallback;
-import com.google.android.gms.games.multiplayer.realtime.RoomUpdateCallback;
+import com.google.android.gms.games.multiplayer.realtime.*;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-
-import org.apache.commons.lang3.SerializationUtils;
-
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-
-import javax.inject.Inject;
-
 import dagger.android.support.DaggerAppCompatActivity;
+import org.apache.commons.lang3.SerializationUtils;
 import zelemon.zsx.battery.BatteryLiveData;
 import zelemon.zsx.battery.StatusActivity;
 import zelemon.zsx.dependencyInjection.TronViewModelFactory;
 import zelemon.zsx.persistence.database.PictureTypeConverter;
 import zelemon.zsx.persistence.database.Profile;
 import zelemon.zsx.persistence.database.SerializableProfile;
+
+import javax.inject.Inject;
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.*;
 
 
 /**
@@ -104,8 +71,7 @@ import zelemon.zsx.persistence.database.SerializableProfile;
  * @author Bruno Oliveira (btco), 2013-04-26
  */
 public class Game extends DaggerAppCompatActivity implements
-        View.OnClickListener,
-        SurfaceHolder.Callback {
+        View.OnClickListener {
 
     // This array lists everything that's clickable, so we can install click
     // event handlers.
@@ -433,6 +399,11 @@ public class Game extends DaggerAppCompatActivity implements
     };
     private ConstraintLayout mGameScreen;
     private LinearLayout mFinishedGameButton;
+    /*
+     * CALLBACKS SECTION. This section shows how we implement the several games
+     * API callbacks.
+     */
+    private MediaPlayer media;
 
     public static byte[] intToByteArray(int anInteger) {
         return ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(anInteger).array();
@@ -535,10 +506,14 @@ public class Game extends DaggerAppCompatActivity implements
         return super.onOptionsItemSelected(item);
     }
 
-    /*
-     * CALLBACKS SECTION. This section shows how we implement the several games
-     * API callbacks.
-     */
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (media != null) {
+            media.release();
+            media = null;
+        }
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -554,7 +529,31 @@ public class Game extends DaggerAppCompatActivity implements
 
 
         mSurfaceView = findViewById(R.id.surface);
-        mSurfaceView.getHolder().addCallback(this);
+
+
+        mSurfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
+            @Override
+            public void surfaceCreated(SurfaceHolder holder) {
+                media = MediaPlayer.create(getApplicationContext(), R.raw.background_vid);
+
+                media.setDisplay(mSurfaceView.getHolder());
+
+                media.setLooping(true);
+                media.start();
+
+            }
+
+            @Override
+            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+
+            }
+
+            @Override
+            public void surfaceDestroyed(SurfaceHolder holder) {
+
+            }
+        });
+
 
         // Get view model
         tronViewModel = ViewModelProviders.of(this, viewModelFactory).get(TronViewModel.class);
@@ -1730,33 +1729,6 @@ public class Game extends DaggerAppCompatActivity implements
             resetGameVars();
             leaveRoom();
         }
-    }
-
-    @Override
-    public void surfaceCreated(SurfaceHolder holder) {
-        MediaPlayer media = MediaPlayer.create(this, R.raw.background_vid);
-        int videoWidth = media.getVideoWidth();
-        int videoHeight = media.getVideoHeight();
-        int screenHeight = mSurfaceView.getHeight();
-        ViewGroup.LayoutParams lp = mSurfaceView.getLayoutParams();
-        lp.height = (int) (screenHeight * 1.5);
-        lp.width = (int) (((float) videoWidth / (float) videoHeight) * (float) screenHeight * 1.5);
-
-        mSurfaceView.setLayoutParams(lp);
-        media.setDisplay(mSurfaceView.getHolder());
-
-        media.setLooping(true);
-        media.start();
-    }
-
-    @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-
-    }
-
-    @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
-
     }
 
     private class DelayedAck implements Runnable {
