@@ -20,39 +20,72 @@ import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
-import android.view.*;
+import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.games.*;
+import com.google.android.gms.games.Games;
+import com.google.android.gms.games.GamesActivityResultCodes;
+import com.google.android.gms.games.GamesCallbackStatusCodes;
+import com.google.android.gms.games.GamesClient;
+import com.google.android.gms.games.GamesClientStatusCodes;
+import com.google.android.gms.games.InvitationsClient;
+import com.google.android.gms.games.PlayersClient;
+import com.google.android.gms.games.RealTimeMultiplayerClient;
 import com.google.android.gms.games.multiplayer.Invitation;
 import com.google.android.gms.games.multiplayer.InvitationCallback;
 import com.google.android.gms.games.multiplayer.Multiplayer;
 import com.google.android.gms.games.multiplayer.Participant;
-import com.google.android.gms.games.multiplayer.realtime.*;
+import com.google.android.gms.games.multiplayer.realtime.OnRealTimeMessageReceivedListener;
+import com.google.android.gms.games.multiplayer.realtime.RealTimeMessage;
+import com.google.android.gms.games.multiplayer.realtime.Room;
+import com.google.android.gms.games.multiplayer.realtime.RoomConfig;
+import com.google.android.gms.games.multiplayer.realtime.RoomStatusUpdateCallback;
+import com.google.android.gms.games.multiplayer.realtime.RoomUpdateCallback;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import dagger.android.support.DaggerAppCompatActivity;
+
 import org.apache.commons.lang3.SerializationUtils;
+
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+
+import javax.inject.Inject;
+
+import dagger.android.support.DaggerAppCompatActivity;
 import zelemon.zsx.battery.BatteryLiveData;
 import zelemon.zsx.battery.StatusActivity;
 import zelemon.zsx.dependencyInjection.TronViewModelFactory;
 import zelemon.zsx.persistence.database.PictureTypeConverter;
 import zelemon.zsx.persistence.database.Profile;
 import zelemon.zsx.persistence.database.SerializableProfile;
-
-import javax.inject.Inject;
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.*;
 
 
 /**
@@ -330,6 +363,14 @@ public class Game extends DaggerAppCompatActivity implements
     private Profile mProfile;
     private Location currentLocation;
     private final Observer<Location> locationObserver = location -> currentLocation = location;
+    private ConstraintLayout mGameScreen;
+    private LinearLayout mFinishedGameButton;
+    /*
+     * CALLBACKS SECTION. This section shows how we implement the several games
+     * API callbacks.
+     */
+    private MediaPlayer media;
+    private CountDownTimer mWifiTimeout;
     // Called when we receive a real-time message from the network.
     // Messages in our game are made up of 2 bytes: the first one is 'F' or 'U'
     // indicating
@@ -339,6 +380,10 @@ public class Game extends DaggerAppCompatActivity implements
     OnRealTimeMessageReceivedListener mOnRealTimeMessageReceivedListener = new OnRealTimeMessageReceivedListener() {
         @Override
         public void onRealTimeMessageReceived(@NonNull RealTimeMessage realTimeMessage) {
+            if (mWifiTimeout != null) {
+                mWifiTimeout.cancel();
+                mWifiTimeout.start();
+            }
             byte[] buf = realTimeMessage.getMessageData();
             String sender = realTimeMessage.getSenderParticipantId();
 
@@ -381,6 +426,16 @@ public class Game extends DaggerAppCompatActivity implements
                         mParticipantEnemy.put(participant.getParticipantId(), new Enemy(parseIntFromByteArray(Arrays.copyOfRange(buf, 4 * i + 1, 4 * i + 5)), getInitialPosition(i), GRID_SIZE));
                     }
                 }
+                // Start wifi lost timeout
+                mWifiTimeout = new CountDownTimer(5000, 50) {
+                    public void onTick(long millisUntilFinished) {
+                    }
+
+                    public void onFinish() {
+                        resetGameVars();
+                        leaveRoom();
+                    }
+                }.start();
             }
             // Start Game
             else if (buf[0] == 'S') {
@@ -399,13 +454,6 @@ public class Game extends DaggerAppCompatActivity implements
             }
         }
     };
-    private ConstraintLayout mGameScreen;
-    private LinearLayout mFinishedGameButton;
-    /*
-     * CALLBACKS SECTION. This section shows how we implement the several games
-     * API callbacks.
-     */
-    private MediaPlayer media;
 
     public static byte[] intToByteArray(int anInteger) {
         return ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(anInteger).array();
@@ -555,7 +603,11 @@ public class Game extends DaggerAppCompatActivity implements
 
             @Override
             public void surfaceDestroyed(SurfaceHolder holder) {
-
+                if (media != null) {
+                    media.stop();
+                    media.release();
+                    media = null;
+                }
             }
         });
 
@@ -1391,6 +1443,17 @@ public class Game extends DaggerAppCompatActivity implements
                         }
                     });
         }
+        // Start wifi lost timeout
+
+        mWifiTimeout = new CountDownTimer(5000, 50) {
+            public void onTick(long millisUntilFinished) {
+            }
+
+            public void onFinish() {
+                resetGameVars();
+                leaveRoom();
+            }
+        }.start();
     }
 
     public void broadcastPlayerInfo() {
@@ -1646,6 +1709,12 @@ public class Game extends DaggerAppCompatActivity implements
             findViewById(id).setVisibility(screenId == id ? View.VISIBLE : View.GONE);
         }
         mCurScreen = screenId;
+
+//        if (mCurScreen != SCREENS[0] && mGamePanel != null) {
+//            mGamePanel.destroyDrawingCache();
+//            ConstraintLayout gameScreen = findViewById(R.id.screen_game);
+//            gameScreen.removeView(mGamePanel);
+//        }
 
         // should we show the invitation popup?
         boolean showInvPopup;
