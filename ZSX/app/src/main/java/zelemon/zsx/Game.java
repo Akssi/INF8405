@@ -213,6 +213,92 @@ public class Game extends DaggerAppCompatActivity implements
     private MediaPlayer media;
     private CountDownTimer mWifiTimeout = null;
     private ViewGroup.LayoutParams mGamePanelParams;
+    // Called when we receive a real-time message from the network.
+    // Messages in our game are made up of 2 bytes: the first one is 'F' or 'U'
+    // indicating
+    // whether it's a final or interim score. The second byte is the score.
+    // There is also the
+    // 'S' message, which indicates that the game should start.
+    OnRealTimeMessageReceivedListener mOnRealTimeMessageReceivedListener = new OnRealTimeMessageReceivedListener() {
+        @Override
+        public void onRealTimeMessageReceived(@NonNull RealTimeMessage realTimeMessage) {
+            if (mWifiTimeout != null) {
+                mWifiTimeout.cancel();
+                mWifiTimeout.start();
+            }
+            byte[] buf = realTimeMessage.getMessageData();
+            String sender = realTimeMessage.getSenderParticipantId();
+
+            if (buf[0] == 'C' && !isRestarting) {
+                Log.i("COMM", "COLLISION message received");
+                Log.i("COMM", "\tfrom " + sender);
+                mFinishedParticipants.add(sender);
+                mParticipantLives.put(sender, mParticipantLives.get(sender) - 1);
+
+                mGamePanel.stopGameUpdate();
+                sendCollisionAck(sender);
+//                Handler handler = new Handler();
+//                handler.postDelayed(new DelayedAck(sender), 1000);
+
+            } else if (buf[0] == 'A' && !isRestarting) {
+                Log.i("COMM", "ACK COLLISION message received");
+                Log.i("COMM", "\tfrom " + sender);
+                isWaitingCollisionAck = false;
+                mFinishedParticipants.add(sender);
+                checkCollisionResolve();
+            } else if (buf[0] == 'P') {
+                // Position update
+                if (mParticipantEnemy.containsKey(sender)) {
+                    byte[] positionX = Arrays.copyOfRange(buf, 1, 5);
+                    byte[] positionY = Arrays.copyOfRange(buf, 5, 9);
+                    mParticipantEnemy.get(sender).setEnemyPosition(new Int2(parseIntFromByteArray(positionX), parseIntFromByteArray(positionY)));
+                }
+                StringBuilder sb = new StringBuilder();
+            }
+            // Initialize Game
+            else if (buf[0] == 'I') {
+                Log.i("COMM", "INITIALIZE message received");
+                Log.i("COMM", "\tfrom " + sender);
+                for (int i = 0; i < mParticipants.size(); i++) {
+                    Participant participant = mParticipants.get(i);
+                    if (i == mParticipantIndex) {
+                        playerColor = parseIntFromByteArray(Arrays.copyOfRange(buf, 4 * i + 1, 4 * i + 5));
+                    } else {
+                        Log.v("ZSX", "Creating Enemy at initialization");
+                        mParticipantEnemy.put(participant.getParticipantId(), new Enemy(parseIntFromByteArray(Arrays.copyOfRange(buf, 4 * i + 1, 4 * i + 5)), getInitialPosition(i), GRID_SIZE));
+                    }
+                }
+                if (mWifiTimeout == null) {
+                    // Start wifi lost timeout
+                    mWifiTimeout = new CountDownTimer(5000, 50) {
+                        public void onTick(long millisUntilFinished) {
+                        }
+
+                        public void onFinish() {
+                            Log.v("ZSX", "WIFI timeout");
+                            resetGameVars();
+                            leaveRoom();
+                        }
+                    }.start();
+                }
+            }
+            // Start Game
+            else if (buf[0] == 'S') {
+                StringBuilder sb = new StringBuilder();
+                sb.append("START message received\n\tfrom ");
+                sb.append(sender);
+                Log.i("COMM", sb.toString());
+                startGame(mMultiplayer);
+            }
+            // Player info
+            else if (buf[0] == 'M') {
+                byte[] data = new byte[buf.length - 1];
+                System.arraycopy(buf, 1, data, 0, data.length);
+                SerializableProfile profile = SerializationUtils.deserialize(data);
+                tronViewModel.saveProfile(new Profile(profile.getName(), profile.getLocation(), profile.getPicture()));
+            }
+        }
+    };
     private InvitationCallback mInvitationCallback = new InvitationCallback() {
         // Called when we get an invitation to play a game. We react by showing that to the user.
         @Override
@@ -370,92 +456,6 @@ public class Game extends DaggerAppCompatActivity implements
             // we have left the room; return to main screen.
             Log.d(TAG, "onLeftRoom, code " + statusCode);
             switchToMainScreen();
-        }
-    };
-    // Called when we receive a real-time message from the network.
-    // Messages in our game are made up of 2 bytes: the first one is 'F' or 'U'
-    // indicating
-    // whether it's a final or interim score. The second byte is the score.
-    // There is also the
-    // 'S' message, which indicates that the game should start.
-    OnRealTimeMessageReceivedListener mOnRealTimeMessageReceivedListener = new OnRealTimeMessageReceivedListener() {
-        @Override
-        public void onRealTimeMessageReceived(@NonNull RealTimeMessage realTimeMessage) {
-            if (mWifiTimeout != null) {
-                mWifiTimeout.cancel();
-                mWifiTimeout.start();
-            }
-            byte[] buf = realTimeMessage.getMessageData();
-            String sender = realTimeMessage.getSenderParticipantId();
-
-            if (buf[0] == 'C' && !isRestarting) {
-                Log.i("COMM", "COLLISION message received");
-                Log.i("COMM", "\tfrom " + sender);
-                mFinishedParticipants.add(sender);
-                mParticipantLives.put(sender, mParticipantLives.get(sender) - 1);
-
-                mGamePanel.stopGameUpdate();
-                sendCollisionAck(sender);
-//                Handler handler = new Handler();
-//                handler.postDelayed(new DelayedAck(sender), 1000);
-
-            } else if (buf[0] == 'A' && !isRestarting) {
-                Log.i("COMM", "ACK COLLISION message received");
-                Log.i("COMM", "\tfrom " + sender);
-                isWaitingCollisionAck = false;
-                mFinishedParticipants.add(sender);
-                checkCollisionResolve();
-            } else if (buf[0] == 'P') {
-                // Position update
-                if (mParticipantEnemy.containsKey(sender)) {
-                    byte[] positionX = Arrays.copyOfRange(buf, 1, 5);
-                    byte[] positionY = Arrays.copyOfRange(buf, 5, 9);
-                    mParticipantEnemy.get(sender).setEnemyPosition(new Int2(parseIntFromByteArray(positionX), parseIntFromByteArray(positionY)));
-                }
-                StringBuilder sb = new StringBuilder();
-            }
-            // Initialize Game
-            else if (buf[0] == 'I') {
-                Log.i("COMM", "INITIALIZE message received");
-                Log.i("COMM", "\tfrom " + sender);
-                for (int i = 0; i < mParticipants.size(); i++) {
-                    Participant participant = mParticipants.get(i);
-                    if (i == mParticipantIndex) {
-                        playerColor = parseIntFromByteArray(Arrays.copyOfRange(buf, 4 * i + 1, 4 * i + 5));
-                    } else {
-                        Log.v("ZSX", "Creating Enemy at initialization");
-                        mParticipantEnemy.put(participant.getParticipantId(), new Enemy(parseIntFromByteArray(Arrays.copyOfRange(buf, 4 * i + 1, 4 * i + 5)), getInitialPosition(i), GRID_SIZE));
-                    }
-                }
-                if (mWifiTimeout == null) {
-                    // Start wifi lost timeout
-                    mWifiTimeout = new CountDownTimer(5000, 50) {
-                        public void onTick(long millisUntilFinished) {
-                        }
-
-                        public void onFinish() {
-                            Log.v("ZSX", "WIFI timeout");
-                            resetGameVars();
-                            leaveRoom();
-                        }
-                    }.start();
-                }
-            }
-            // Start Game
-            else if (buf[0] == 'S') {
-                StringBuilder sb = new StringBuilder();
-                sb.append("START message received\n\tfrom ");
-                sb.append(sender);
-                Log.i("COMM", sb.toString());
-                startGame(mMultiplayer);
-            }
-            // Player info
-            else if (buf[0] == 'M') {
-                byte[] data = new byte[buf.length - 1];
-                System.arraycopy(buf, 1, data, 0, data.length);
-                SerializableProfile profile = SerializationUtils.deserialize(data);
-                tronViewModel.saveProfile(new Profile(profile.getName(), profile.getLocation(), profile.getPicture()));
-            }
         }
     };
 
@@ -786,7 +786,7 @@ public class Game extends DaggerAppCompatActivity implements
     void startQuickGame() {
         // quick-start a game with 1 randomly selected opponent
         mSurfaceView.setVisibility(View.INVISIBLE);
-        final int MIN_OPPONENTS = 1, MAX_OPPONENTS = 3;
+        final int MIN_OPPONENTS = 1, MAX_OPPONENTS = 2;
         Bundle autoMatchCriteria = RoomConfig.createAutoMatchCriteria(MIN_OPPONENTS,
                 MAX_OPPONENTS, 0);
         switchToScreen(R.id.screen_wait);
