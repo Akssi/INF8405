@@ -13,7 +13,6 @@ public class MainThread extends Thread {
     private GamePanel gamePanel;
     private boolean running;
 
-
     MainThread(SurfaceHolder surfaceHolder, GamePanel gamePanel) {
         super();
         this.surfaceHolder = surfaceHolder;
@@ -22,34 +21,38 @@ public class MainThread extends Thread {
 
     @Override
     public void run() {
-        long startTime;
-        long timeMillis;
-        long waitTime;
-        long totalTime = 0;
-        int frameCount = 0;
-        long targetTime = 1000 / FPS;
-
-        while (running) {
-            startTime = System.nanoTime();
-            canvas = null;
-
-            threadUpdate();
-
-            timeMillis = (System.nanoTime() - startTime) / 1000000;
-            waitTime = targetTime - timeMillis;
-
+        while (!Thread.currentThread().isInterrupted()) {
             try {
-                sleep(waitTime);
-            } catch (Exception e) {
-            }
+                long startTime;
+                long timeMillis;
+                long waitTime;
+                long totalTime = 0;
+                int frameCount = 0;
+                long targetTime = 1000 / FPS;
 
-            totalTime += System.nanoTime() - startTime;
-            frameCount++;
-            if (frameCount == FPS) {
-                averageFPS = 1000 / ((totalTime / frameCount) / 1000000);
-                frameCount = 0;
-                totalTime = 0;
-                System.out.println(averageFPS);
+                while (running) {
+                    startTime = System.nanoTime();
+                    canvas = null;
+                    threadUpdate();
+
+                    timeMillis = (System.nanoTime() - startTime) / 1000000;
+                    waitTime = targetTime - timeMillis;
+
+                    sleep(waitTime);
+
+                    totalTime += System.nanoTime() - startTime;
+                    frameCount++;
+                    if (frameCount == FPS) {
+                        averageFPS = 1000 / ((totalTime / frameCount) / 1000000);
+                        frameCount = 0;
+                        totalTime = 0;
+                        System.out.println(averageFPS);
+                    }
+                }
+            } catch (InterruptedException ex) {
+                running = false;
+                Thread.currentThread().interrupt();
+            } catch (Exception e) {
             }
         }
     }
