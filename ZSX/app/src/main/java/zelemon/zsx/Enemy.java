@@ -39,6 +39,12 @@ public class Enemy implements GameObject {
         this.trail = new CopyOnWriteArrayList<>();
         this.trailPos = new CopyOnWriteArrayList<>();
         this.pixelPerSquare = new Float2(1, 1);
+
+        enemySprite = new Rect((int) (enemyPosition.x * pixelPerSquare.x),
+                (int) (enemyPosition.y * pixelPerSquare.y),
+                (int) ((enemyPosition.x + 1) * pixelPerSquare.x),
+                (int) ((enemyPosition.y + 1) * pixelPerSquare.y));
+
     }
 
     @Override
@@ -56,7 +62,10 @@ public class Enemy implements GameObject {
 
     @Override
     public void update() {
-
+        enemySprite = new Rect((int) (enemyPosition.x * pixelPerSquare.x),
+                (int) (enemyPosition.y * pixelPerSquare.y),
+                (int) ((enemyPosition.x + 1) * pixelPerSquare.x),
+                (int) ((enemyPosition.y + 1) * pixelPerSquare.y));
 
     }
 
@@ -66,47 +75,48 @@ public class Enemy implements GameObject {
 
     public void setEnemyPosition(Int2 newEnemyPosition) {
         // Add old position to trail
-        trail.add(new Rect(enemySprite));
-        trailPos.add(new Int2(this.enemyPosition.x, this.enemyPosition.y));
-
-        this.enemyPosition = newEnemyPosition;
-
-        enemyPosition = new Int2(clamp(enemyPosition.x, 0, gridSize.x - 1),
-                clamp(enemyPosition.y, 0, gridSize.y-1));
-
-        enemySprite = new Rect((int)(enemyPosition.x * pixelPerSquare.x),
+        trail.add(new Rect(new Rect((int) (enemyPosition.x * pixelPerSquare.x),
                 (int)(enemyPosition.y * pixelPerSquare.y),
                 (int)((enemyPosition.x + 1) * pixelPerSquare.x),
-                (int)((enemyPosition.y + 1) * pixelPerSquare.y));
+                (int) ((enemyPosition.y + 1) * pixelPerSquare.y))));
+        trailPos.add(new Int2(this.enemyPosition.x, this.enemyPosition.y));
+
+        this.enemyPosition = new Int2(clamp(newEnemyPosition.x, 0, gridSize.x - 1),
+                clamp(newEnemyPosition.y, 0, gridSize.y - 1));
+
+
+
 
         if (!trailPos.isEmpty()) {
             // Fill trail with missing info
             Int2 lastTrailPos = trailPos.get(trailPos.size() - 1);
 
-            if (lastTrailPos.x == newEnemyPosition.x && lastTrailPos.y - newEnemyPosition.y > 1) {
+            if (lastTrailPos.x - newEnemyPosition.x == 1 && lastTrailPos.y - newEnemyPosition.y > 1) {
                 int minY = min(lastTrailPos.y, newEnemyPosition.y) + 1;
                 int maxY = max(lastTrailPos.y, newEnemyPosition.y);
 
                 for (int i = minY; i < maxY; i++) {
                     trailPos.add(new Int2(newEnemyPosition.x, i));
+                    trail.add(new Rect((int) (newEnemyPosition.x * pixelPerSquare.x),
+                            (int) (i * pixelPerSquare.y),
+                            (int) ((newEnemyPosition.x + 1) * pixelPerSquare.x),
+                            (int) ((i + 1) * pixelPerSquare.y)));
                 }
-                trail.add(new Rect((int) (newEnemyPosition.x * pixelPerSquare.x),
-                        (int) (minY * pixelPerSquare.y),
-                        (int) ((newEnemyPosition.x + 1) * pixelPerSquare.x),
-                        (int) ((maxY) * pixelPerSquare.y)));
             }
-            if (lastTrailPos.y == newEnemyPosition.y && lastTrailPos.x - newEnemyPosition.x > 1) {
+            if (lastTrailPos.y - newEnemyPosition.y == 1 && lastTrailPos.x - newEnemyPosition.x > 1) {
                 int minX = min(lastTrailPos.x, newEnemyPosition.x) + 1;
                 int maxX = max(lastTrailPos.x, newEnemyPosition.x);
                 for (int i = minX; i < maxX; i++) {
                     trailPos.add(new Int2(i, newEnemyPosition.y));
+                    trail.add(new Rect((int) (i * pixelPerSquare.x),
+                            (int) (enemyPosition.y * pixelPerSquare.y),
+                            (int) ((i + 1) * pixelPerSquare.x),
+                            (int) ((enemyPosition.y + 1) * pixelPerSquare.y)));
                 }
-                trail.add(new Rect((int) (minX * pixelPerSquare.x),
-                        (int) (newEnemyPosition.y * pixelPerSquare.y),
-                        (int) ((maxX) * pixelPerSquare.x),
-                        (int) ((newEnemyPosition.y + 1) * pixelPerSquare.y)));
             }
         }
+
+
     }
 
     public void updateScreenDim(Point newScreenDim) {
