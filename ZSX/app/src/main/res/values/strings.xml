@@ -60,6 +60,9 @@
     <string name="title_activity_profile">ProfileActivity</string>
 
     <string name="choose_photo">Choose photo</string>
+    <string name="status_title">App Info</string>
+    <string name="status_subtitle_network">Network</string>
+    <string name="status_subtitle_battery">Battery</string>
     <string name="profile_photo_path">profile_photo_key</string>
     <string name="preference_file_key">com.zelemon.tron.PREFERENCE_FILE_KEY</string>
 

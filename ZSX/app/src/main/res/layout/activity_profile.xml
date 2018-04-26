@@ -10,24 +10,48 @@
 
 
     <LinearLayout
-        android:orientation="vertical"
-        android:gravity="center"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="24dp" />
+
+        <TextView
+            android:id="@+id/profile_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="Profile Name"
+            android:textAlignment="center"
+            android:textAppearance="@style/TextAppearance.AppCompat.Title"
+            android:textStyle="bold" />
 
         <ImageView
-            android:layout_marginTop="8dp"
             android:id="@+id/profile_photo"
-            android:src="@mipmap/ic_launcher"
             android:layout_width="150dp"
-            android:layout_height="150dp" />
-
-        <Button
+            android:layout_height="150dp"
             android:layout_marginTop="8dp"
+            android:src="@mipmap/ic_launcher" />
+
+        <!--<Button-->
+        <!--android:layout_marginTop="8dp"-->
+        <!--android:id="@+id/button_choose_photo"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="@string/choose_photo" />-->
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="24dp" />
+
+        <ImageButton
             android:id="@+id/button_choose_photo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/choose_photo" />
+            app:srcCompat="@drawable/ic_photo_camera_black_24dp" />
 
     </LinearLayout>
 

@@ -4,12 +4,13 @@ import android.net.TrafficStats;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.TextView;
-import zelemon.zsx.R;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+
+import zelemon.zsx.R;
 
 /**
  * Activity that shows the battery consumption of the app.
@@ -32,14 +33,17 @@ public class StatusActivity extends AppCompatActivity {
                     " %";
             batteryLevel.setText(batteryLevelText);
         });
-        TextView bandwidthLevel = findViewById(R.id.bandwidth_since_startup);
+        TextView upBandwith = findViewById(R.id.bandwidth_up);
+        TextView downBandwith = findViewById(R.id.bandwidth_down);
         int UID = android.os.Process.myUid();
         rxBytesGlobal += getUidRxBytes(UID);
         txBytesGlobal += getUidTxBytes(UID);
 
-        String bandwidth = "Rx bytes: " + rxBytesGlobal + " Tx Bytes: " + txBytesGlobal;
+        String up = txBytesGlobal.toString() + " B (cumulative consumption)";
+        String down = rxBytesGlobal.toString() + " B (cumulative consumption)";
 
-        bandwidthLevel.setText(bandwidth);
+        upBandwith.setText(up);
+        downBandwith.setText(down);
 
     }
 

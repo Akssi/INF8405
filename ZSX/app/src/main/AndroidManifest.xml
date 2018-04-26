@@ -63,11 +63,19 @@
 
         <activity
                 android:name=".MapsActivity"
-                android:label="@string/title_activity_maps"></activity>
-        <activity android:name=".battery.StatusActivity"/>
+            android:label="@string/title_activity_maps"
+            android:parentActivityName=".Game"
+            android:theme="@style/Theme.AppCompat.Light.DarkActionBar" />
+        <activity
+            android:name=".battery.StatusActivity"
+            android:label="App Info"
+            android:parentActivityName=".Game"
+            android:theme="@style/Theme.AppCompat.Light.DarkActionBar" />
         <activity
                 android:name=".ProfileActivity"
-                android:label="@string/title_activity_profile"></activity>
+            android:label="@string/title_activity_profile"
+            android:parentActivityName=".Game"
+            android:theme="@style/Theme.AppCompat.Light.DarkActionBar" />
     </application>
 
 </manifest>

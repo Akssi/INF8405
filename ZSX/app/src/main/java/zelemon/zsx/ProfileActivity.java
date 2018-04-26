@@ -17,17 +17,21 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
-import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
+
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+import javax.inject.Inject;
+
 import dagger.android.support.DaggerAppCompatActivity;
 import zelemon.zsx.persistence.database.PictureTypeConverter;
 import zelemon.zsx.persistence.database.Profile;
-
-import javax.inject.Inject;
-import java.io.IOException;
-import java.io.InputStream;
 
 public class ProfileActivity extends DaggerAppCompatActivity {
 
@@ -41,8 +45,9 @@ public class ProfileActivity extends DaggerAppCompatActivity {
     private Location currentLocation;
     private Profile currentProfile;
     private final Observer<Location> locationObserver = this::updateCurrentLocation;
-    private final Observer<Profile> currentProfileObserver = this::updateCurrentProfile;
     private LiveData<Profile> currentProfileLiveData;
+    private TextView mProfileName;
+    private final Observer<Profile> currentProfileObserver = this::updateCurrentProfile;
 
     private void updateCurrentProfile(Profile profile) {
         if (profile != null) {
@@ -79,7 +84,8 @@ public class ProfileActivity extends DaggerAppCompatActivity {
         }
 
         mProfilePhoto = findViewById(R.id.profile_photo);
-        Button choosePhotoButton = findViewById(R.id.button_choose_photo);
+        mProfileName = findViewById(R.id.profile_name);
+        ImageButton choosePhotoButton = findViewById(R.id.button_choose_photo);
         choosePhotoButton.setOnClickListener(v -> {
             // Take existing image
             Intent takeImage = new Intent(Intent.ACTION_GET_CONTENT, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
@@ -168,6 +174,7 @@ public class ProfileActivity extends DaggerAppCompatActivity {
     private void loadImageFromDatabase() {
         Bitmap picture = PictureTypeConverter.toBitmap(this.currentProfile.getPicture());
         mProfilePhoto.setImageBitmap(picture);
+        mProfileName.setText(currentProfile.getName());
     }
 
 }
