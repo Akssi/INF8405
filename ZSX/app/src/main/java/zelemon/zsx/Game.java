@@ -507,15 +507,6 @@ public class Game extends DaggerAppCompatActivity implements
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (media != null) {
-            media.release();
-            media = null;
-        }
-    }
-
-    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
@@ -997,6 +988,10 @@ public class Game extends DaggerAppCompatActivity implements
         switchToMainScreen();
 
         super.onStop();
+        if (media != null) {
+            media.release();
+            media = null;
+        }
     }
 
     // Handle back key to make sure we cleanly leave a game if we are in the middle of one
