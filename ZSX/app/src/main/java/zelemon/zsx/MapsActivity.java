@@ -14,6 +14,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.widget.Toast;
+
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -25,13 +26,16 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.clustering.Cluster;
 import com.google.maps.android.clustering.ClusterManager;
+
+import java.util.List;
+
+import javax.inject.Inject;
+
 import dagger.android.support.DaggerAppCompatActivity;
 import zelemon.zsx.Fragments.CardFragment;
 import zelemon.zsx.dependencyInjection.TronViewModelFactory;
 import zelemon.zsx.persistence.database.Profile;
-
-import javax.inject.Inject;
-import java.util.List;
+import zelemon.zsx.persistence.database.SerializableProfile;
 
 public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener, ClusterManager.OnClusterClickListener<PlayerMarker> {
 
@@ -217,7 +221,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
             // add a list
             builder.setItems(profileNames, (DialogInterface dialog, int index) -> {
                 dialog.cancel();
-                CardFragment cardFragment = CardFragment.newInstance(profileList.get(index));
+                CardFragment cardFragment = CardFragment.newInstance(new SerializableProfile(profileList.get(index)));
                 cardFragment.show(getFragmentManager(), "Card fragment");
             });
 
@@ -225,7 +229,7 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
             AlertDialog dialog = builder.create();
             dialog.show();
         } else if (!profileList.isEmpty()) {
-            CardFragment cardFragment = CardFragment.newInstance(profileList.get(0));
+            CardFragment cardFragment = CardFragment.newInstance(new SerializableProfile(profileList.get(0)));
             cardFragment.show(getFragmentManager(), "Card fragment");
         } else {
             Toast.makeText(this, " No profiles found", Toast.LENGTH_SHORT).show();
