@@ -190,6 +190,28 @@ public class Game extends DaggerAppCompatActivity implements
     private RealTimeMultiplayerClient mRealTimeMultiplayerClient = null;
     // Client used to interact with the Invitation system.
     private InvitationsClient mInvitationsClient = null;
+    // Handle the result of the "Select players UI" we launched when the user clicked the
+    // "Invite friends" button. We react by creating a room with those players.
+    private String mPlayerId;
+    private int mParticipantIndex;
+    private GamePanel mGamePanel;
+    private boolean isWaitingCollisionAck;
+    private ImageView backgroundImage;
+    private TextView mLostOverlay;
+    private boolean mIsGameFinished;
+    private TextView mWonOverlay;
+    private TronViewModel tronViewModel;
+    private Profile mProfile;
+    private Location currentLocation;
+    private final Observer<Location> locationObserver = location -> currentLocation = location;
+    private ConstraintLayout mGameScreen;
+    private LinearLayout mFinishedGameButton;
+    /*
+     * CALLBACKS SECTION. This section shows how we implement the several games
+     * API callbacks.
+     */
+    private MediaPlayer media;
+    private CountDownTimer mWifiTimeout = null;
     private InvitationCallback mInvitationCallback = new InvitationCallback() {
         // Called when we get an invitation to play a game. We react by showing that to the user.
         @Override
@@ -213,9 +235,6 @@ public class Game extends DaggerAppCompatActivity implements
             }
         }
     };
-    // Handle the result of the "Select players UI" we launched when the user clicked the
-    // "Invite friends" button. We react by creating a room with those players.
-    private String mPlayerId;
     private RoomStatusUpdateCallback mRoomStatusUpdateCallback = new RoomStatusUpdateCallback() {
         // Called when we are connected to the room. We're not ready to play yet! (maybe not everybody
         // is connected yet).
@@ -352,25 +371,6 @@ public class Game extends DaggerAppCompatActivity implements
             switchToMainScreen();
         }
     };
-    private int mParticipantIndex;
-    private GamePanel mGamePanel;
-    private boolean isWaitingCollisionAck;
-    private ImageView backgroundImage;
-    private TextView mLostOverlay;
-    private boolean mIsGameFinished;
-    private TextView mWonOverlay;
-    private TronViewModel tronViewModel;
-    private Profile mProfile;
-    private Location currentLocation;
-    private final Observer<Location> locationObserver = location -> currentLocation = location;
-    private ConstraintLayout mGameScreen;
-    private LinearLayout mFinishedGameButton;
-    /*
-     * CALLBACKS SECTION. This section shows how we implement the several games
-     * API callbacks.
-     */
-    private MediaPlayer media;
-    private CountDownTimer mWifiTimeout;
     // Called when we receive a real-time message from the network.
     // Messages in our game are made up of 2 bytes: the first one is 'F' or 'U'
     // indicating
@@ -426,16 +426,19 @@ public class Game extends DaggerAppCompatActivity implements
                         mParticipantEnemy.put(participant.getParticipantId(), new Enemy(parseIntFromByteArray(Arrays.copyOfRange(buf, 4 * i + 1, 4 * i + 5)), getInitialPosition(i), GRID_SIZE));
                     }
                 }
-                // Start wifi lost timeout
-                mWifiTimeout = new CountDownTimer(5000, 50) {
-                    public void onTick(long millisUntilFinished) {
-                    }
+                if (mWifiTimeout == null) {
+                    // Start wifi lost timeout
+                    mWifiTimeout = new CountDownTimer(5000, 50) {
+                        public void onTick(long millisUntilFinished) {
+                        }
 
-                    public void onFinish() {
-                        resetGameVars();
-                        leaveRoom();
-                    }
-                }.start();
+                        public void onFinish() {
+                            Log.v("ZSX", "WIFI timeout");
+                            resetGameVars();
+                            leaveRoom();
+                        }
+                    }.start();
+                }
             }
             // Start Game
             else if (buf[0] == 'S') {
@@ -505,6 +508,9 @@ public class Game extends DaggerAppCompatActivity implements
                 }
             }
             if (mIsGameFinished) {
+                if (mWifiTimeout != null) {
+                    mWifiTimeout.cancel();
+                }
                 if (mLostOverlay.getVisibility() == View.GONE) {
                     mWonOverlay.setVisibility(View.VISIBLE);
                     Log.v("ZSX", "You won!" + mParticipants.get(mParticipantIndex).getParticipantId());
@@ -603,11 +609,11 @@ public class Game extends DaggerAppCompatActivity implements
 
             @Override
             public void surfaceDestroyed(SurfaceHolder holder) {
-                if (media != null) {
-                    media.stop();
-                    media.release();
-                    media = null;
-                }
+//                if (media != null) {
+//                    media.stop();
+//                    media.release();
+//                    media = null;
+//                }
             }
         });
 
@@ -1445,15 +1451,18 @@ public class Game extends DaggerAppCompatActivity implements
         }
         // Start wifi lost timeout
 
-        mWifiTimeout = new CountDownTimer(5000, 50) {
-            public void onTick(long millisUntilFinished) {
-            }
+        if (mWifiTimeout == null) {
+            mWifiTimeout = new CountDownTimer(6000, 50) {
+                public void onTick(long millisUntilFinished) {
+                }
 
-            public void onFinish() {
-                resetGameVars();
-                leaveRoom();
-            }
-        }.start();
+                public void onFinish() {
+                    Log.v("ZSX", "WIFI timeout");
+                    resetGameVars();
+                    leaveRoom();
+                }
+            }.start();
+        }
     }
 
     public void broadcastPlayerInfo() {
@@ -1710,6 +1719,9 @@ public class Game extends DaggerAppCompatActivity implements
         }
         mCurScreen = screenId;
 
+        if (mCurScreen != SCREENS[0]) {
+            mWifiTimeout = null;
+        }
 //        if (mCurScreen != SCREENS[0] && mGamePanel != null) {
 //            mGamePanel.destroyDrawingCache();
 //            ConstraintLayout gameScreen = findViewById(R.id.screen_game);
