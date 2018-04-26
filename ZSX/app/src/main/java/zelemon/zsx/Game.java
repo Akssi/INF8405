@@ -212,6 +212,7 @@ public class Game extends DaggerAppCompatActivity implements
      */
     private MediaPlayer media;
     private CountDownTimer mWifiTimeout = null;
+    private ViewGroup.LayoutParams mGamePanelParams;
     private InvitationCallback mInvitationCallback = new InvitationCallback() {
         // Called when we get an invitation to play a game. We react by showing that to the user.
         @Override
@@ -1324,7 +1325,9 @@ public class Game extends DaggerAppCompatActivity implements
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         ConstraintLayout gameScreen = findViewById(R.id.screen_game);
         SurfaceView viewTemplate = findViewById(R.id.game_panel);
-        ViewGroup.LayoutParams params = viewTemplate.getLayoutParams();
+        if (mGamePanelParams == null) {
+            mGamePanelParams = viewTemplate.getLayoutParams();
+        }
         gameScreen.removeView(viewTemplate);
 
         backgroundImage.setBackgroundColor(playerColor);
@@ -1358,7 +1361,7 @@ public class Game extends DaggerAppCompatActivity implements
         gameScreen.removeView(mWonOverlay);
         gameScreen.removeView(mLostOverlay);
         mGamePanel = new GamePanel(this, GRID_SIZE, playerPosition);
-        gameScreen.addView(mGamePanel, params);
+        gameScreen.addView(mGamePanel, mGamePanelParams);
         gameScreen.addView(mStartGameCountdown, textViewParam);
         gameScreen.addView(mWonOverlay);
         gameScreen.addView(mLostOverlay);
@@ -1720,13 +1723,17 @@ public class Game extends DaggerAppCompatActivity implements
         mCurScreen = screenId;
 
         if (mCurScreen != SCREENS[0]) {
-            mWifiTimeout = null;
+            if (mWifiTimeout != null) {
+                mWifiTimeout.cancel();
+                mWifiTimeout = null;
+            }
+            ConstraintLayout gameScreen = findViewById(R.id.screen_game);
+            SurfaceView viewTemplate = findViewById(R.id.game_panel);
+            if (mGamePanelParams == null) {
+                mGamePanelParams = viewTemplate.getLayoutParams();
+            }
+            gameScreen.removeView(viewTemplate);
         }
-//        if (mCurScreen != SCREENS[0] && mGamePanel != null) {
-//            mGamePanel.destroyDrawingCache();
-//            ConstraintLayout gameScreen = findViewById(R.id.screen_game);
-//            gameScreen.removeView(mGamePanel);
-//        }
 
         // should we show the invitation popup?
         boolean showInvPopup;
