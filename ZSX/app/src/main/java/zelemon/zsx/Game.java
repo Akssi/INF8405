@@ -1,10 +1,12 @@
 package zelemon.zsx;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -15,6 +17,8 @@ import android.os.CountDownTimer;
 import android.renderscript.Int2;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.*;
 import android.widget.ImageView;
@@ -72,7 +76,6 @@ import java.util.*;
  */
 public class Game extends DaggerAppCompatActivity implements
         View.OnClickListener {
-
     // This array lists everything that's clickable, so we can install click
     // event handlers.
     final static int[] CLICKABLES = {
@@ -85,18 +88,16 @@ public class Game extends DaggerAppCompatActivity implements
     final static int RC_SELECT_PLAYERS = 10000;
     final static int RC_INVITATION_INBOX = 10001;
     final static int RC_WAITING_ROOM = 10002;
+    // Grid size
+    final static Int2 GRID_SIZE = new Int2(90, 132);
 
     /*
      * API INTEGRATION SECTION. This section contains the code that integrates
      * the game with the Google Play game services API.
      */
-
-    // Grid size
-    final static Int2 GRID_SIZE = new Int2(90, 132);
     final static int QuarterX = GRID_SIZE.x / 4;
     final static int MidY = GRID_SIZE.y / 2;
     final static int ThreeQuarterX = 3 * GRID_SIZE.x / 4;
-
     // This array lists all the individual screens our game has.
     final static int[] SCREENS = {
             R.id.screen_game, R.id.screen_main, R.id.screen_sign_in,
@@ -108,6 +109,7 @@ public class Game extends DaggerAppCompatActivity implements
     final static int[] ENEMY_LIVES = {
             R.id.enemy_life3, R.id.enemy_life2, R.id.enemy_life1
     };
+    private static final int PERMISSION_REQUEST_LOCATION = 0;
     // Request code used to invoke sign in user interactions.
     private static final int RC_SIGN_IN = 9001;
     private static boolean isStartupLaunch = true;
@@ -507,6 +509,17 @@ public class Game extends DaggerAppCompatActivity implements
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        switch (requestCode) {
+            case PERMISSION_REQUEST_LOCATION:
+                if (grantResults.length > 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                }
+        }
+    }
+
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
@@ -622,6 +635,10 @@ public class Game extends DaggerAppCompatActivity implements
         // Since the state of the signed in user can change when the activity is not active
         // it is recommended to try and sign in silently from when the app resumes.
         signInSilently();
+        if (ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_LOCATION);
+        }
     }
 
     @Override

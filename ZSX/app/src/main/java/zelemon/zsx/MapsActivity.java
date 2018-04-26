@@ -14,7 +14,6 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.widget.Toast;
-
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -23,19 +22,16 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.clustering.Cluster;
 import com.google.maps.android.clustering.ClusterManager;
-
-import java.util.List;
-
-import javax.inject.Inject;
-
 import dagger.android.support.DaggerAppCompatActivity;
 import zelemon.zsx.Fragments.CardFragment;
 import zelemon.zsx.dependencyInjection.TronViewModelFactory;
 import zelemon.zsx.persistence.database.Profile;
 import zelemon.zsx.persistence.database.SerializableProfile;
+
+import javax.inject.Inject;
+import java.util.List;
 
 public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener, ClusterManager.OnClusterClickListener<PlayerMarker> {
 
@@ -134,11 +130,6 @@ public class MapsActivity extends DaggerAppCompatActivity implements OnMapReadyC
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
 
         // Request Permission
         if (ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
