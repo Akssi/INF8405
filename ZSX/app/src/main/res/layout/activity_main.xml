@@ -20,85 +20,84 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+
     <!-- SIGN-IN SCREEN -->
+
     <LinearLayout
         android:id="@+id/screen_sign_in"
         style="@style/LLScreen">
 
         <TextView style="@style/GameTitle" />
 
-        <TextView style="@style/GameBlurb" />
-
         <com.google.android.gms.common.SignInButton
             android:id="@+id/button_sign_in"
             style="@style/SignInButton" />
     </LinearLayout>
+
+    <SurfaceView
+        android:id="@+id/surface"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" />
 
     <!-- MAIN SCREEN -->
     <LinearLayout
         android:id="@+id/screen_main"
         style="@style/LLScreen">
 
+
         <TextView style="@style/GameTitle" />
 
-        <Button
-            android:id="@+id/button_quick_game"
-            style="@style/MainScreenButton"
-            android:text="@string/quick_game" />
 
-        <TextView
-            style="@style/MainScreenButtonBlurb"
-            android:text="@string/quick_game_explanation" />
+        <ImageView
+            android:id="@+id/button_quick_game"
+            android:layout_width="192dp"
+            android:layout_height="192dp"
+            android:src="@drawable/ic_play_circle_outline_black_24dp" />
 
         <!--<Button-->
             <!--android:id="@+id/button_invite_players"-->
             <!--style="@style/MainScreenButton"-->
             <!--android:text="@string/invite_players" />-->
 
-        <!--<TextView-->
-            <!--style="@style/MainScreenButtonBlurb"-->
-            <!--android:text="@string/invite_players_explanation" />-->
-
         <!--<Button-->
             <!--android:id="@+id/button_see_invitations"-->
             <!--style="@style/MainScreenButton"-->
             <!--android:text="@string/see_invitations" />-->
 
-        <!--<TextView-->
-            <!--style="@style/MainScreenButtonBlurb"-->
-            <!--android:text="@string/see_invitations_explanation" />-->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:orientation="horizontal">
 
-        <Button
+            <ImageView
             android:id="@+id/button_see_map"
-            style="@style/MainScreenButton"
-            android:text="@string/see_map" />
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_margin="8dp"
+                android:src="@drawable/ic_map_black_24dp" />
 
-        <TextView
-            style="@style/MainScreenButtonBlurb"
-            android:text="@string/see_map_explanation" />
-
-        <Button
+            <ImageView
             android:id="@+id/button_see_profile"
-            style="@style/MainScreenButton"
-            android:text="@string/see_profile" />
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_margin="8dp"
+                android:src="@drawable/ic_account_circle_black_24dp" />
 
-        <TextView
-                style="@style/MainScreenButtonBlurb"
-                android:text="@string/see_profile_explanation"/>
-
-        <Button
+            <ImageView
                 android:id="@+id/battery_viewer"
-                style="@style/MainScreenButton"
-                android:text="@string/see_battery"/>
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_margin="8dp"
+                android:src="@drawable/ic_info_outline_black_24dp" />
+        </LinearLayout>
 
-        <TextView
-                style="@style/MainScreenButtonBlurb"
-                android:text="@string/see_battery_explanation"/>
-
-        <Button
+        <ImageView
             android:id="@+id/button_sign_out"
-            style="@style/SignOutButton"
-            android:text="@string/sign_out" />
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_margin="8dp"
+            android:src="@drawable/ic_directions_run_black_24dp" />
     </LinearLayout>
 
     <!-- INVITATION POPUP -->
@@ -191,10 +190,10 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:layout_marginTop="8dp"
+            android:src="@drawable/ic_favorite_black_24dp"
             app:layout_constraintBottom_toTopOf="@+id/game_panel"
             app:layout_constraintStart_toEndOf="@+id/textView"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@android:drawable/btn_star_big_on" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
             android:id="@+id/life2"
@@ -203,10 +202,10 @@
             android:layout_marginBottom="8dp"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
+            android:src="@drawable/ic_favorite_black_24dp"
             app:layout_constraintBottom_toTopOf="@+id/game_panel"
             app:layout_constraintStart_toEndOf="@+id/life3"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@android:drawable/btn_star_big_on" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
             android:id="@+id/life1"
@@ -215,10 +214,10 @@
             android:layout_marginBottom="8dp"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
+            android:src="@drawable/ic_favorite_black_24dp"
             app:layout_constraintBottom_toTopOf="@+id/game_panel"
             app:layout_constraintStart_toEndOf="@+id/life2"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@android:drawable/btn_star_big_on" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
             android:id="@+id/enemy_life1"
@@ -227,10 +226,10 @@
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginTop="8dp"
+            android:src="@drawable/ic_favorite_black_24dp"
             app:layout_constraintBottom_toTopOf="@+id/game_panel"
             app:layout_constraintEnd_toStartOf="@+id/enemy_life2"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@android:drawable/btn_star_big_on" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
             android:id="@+id/enemy_life2"
@@ -239,10 +238,10 @@
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginTop="8dp"
+            android:src="@drawable/ic_favorite_black_24dp"
             app:layout_constraintBottom_toTopOf="@+id/game_panel"
             app:layout_constraintEnd_toStartOf="@+id/enemy_life3"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@android:drawable/btn_star_big_on" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
             android:id="@+id/enemy_life3"
@@ -251,10 +250,10 @@
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginTop="8dp"
+            android:src="@drawable/ic_favorite_black_24dp"
             app:layout_constraintBottom_toTopOf="@+id/game_panel"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@android:drawable/btn_star_big_on" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/textView"

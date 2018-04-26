@@ -5,18 +5,22 @@ import android.app.AlertDialog;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.location.Location;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.renderscript.Int2;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -75,6 +79,7 @@ import dagger.android.support.DaggerAppCompatActivity;
 import zelemon.zsx.battery.BatteryLiveData;
 import zelemon.zsx.battery.StatusActivity;
 import zelemon.zsx.dependencyInjection.TronViewModelFactory;
+import zelemon.zsx.persistence.database.PictureTypeConverter;
 import zelemon.zsx.persistence.database.Profile;
 import zelemon.zsx.persistence.database.SerializableProfile;
 
@@ -99,7 +104,8 @@ import zelemon.zsx.persistence.database.SerializableProfile;
  * @author Bruno Oliveira (btco), 2013-04-26
  */
 public class Game extends DaggerAppCompatActivity implements
-        View.OnClickListener {
+        View.OnClickListener,
+        SurfaceHolder.Callback {
 
     // This array lists everything that's clickable, so we can install click
     // event handlers.
@@ -171,6 +177,7 @@ public class Game extends DaggerAppCompatActivity implements
     int mCurScreen = -1;
     @Inject
     TronViewModelFactory viewModelFactory;
+    SurfaceView mSurfaceView = null;
     private boolean isRestarting;
     private TextView mStartGameCountdown;
     private ArrayList<ImageView> mPLayerLives = new ArrayList<>();
@@ -353,6 +360,8 @@ public class Game extends DaggerAppCompatActivity implements
     private TextView mWonOverlay;
     private TronViewModel tronViewModel;
     private Profile mProfile;
+    private Location currentLocation;
+    private final Observer<Location> locationObserver = location -> currentLocation = location;
     // Called when we receive a real-time message from the network.
     // Messages in our game are made up of 2 bytes: the first one is 'F' or 'U'
     // indicating
@@ -526,6 +535,11 @@ public class Game extends DaggerAppCompatActivity implements
         return super.onOptionsItemSelected(item);
     }
 
+    /*
+     * CALLBACKS SECTION. This section shows how we implement the several games
+     * API callbacks.
+     */
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -537,6 +551,10 @@ public class Game extends DaggerAppCompatActivity implements
         }
 
         setContentView(R.layout.activity_main);
+
+
+        mSurfaceView = findViewById(R.id.surface);
+        mSurfaceView.getHolder().addCallback(this);
 
         // Get view model
         tronViewModel = ViewModelProviders.of(this, viewModelFactory).get(TronViewModel.class);
@@ -574,11 +592,6 @@ public class Game extends DaggerAppCompatActivity implements
         switchToMainScreen();
         checkPlaceholderIds();
     }
-
-    /*
-     * CALLBACKS SECTION. This section shows how we implement the several games
-     * API callbacks.
-     */
 
     // Check the sample to ensure all placeholder ids are are updated with real-world values.
     // This is strictly for the purpose of the samples; you don't need this in a production
@@ -703,6 +716,7 @@ public class Game extends DaggerAppCompatActivity implements
 
     void startQuickGame() {
         // quick-start a game with 1 randomly selected opponent
+        mSurfaceView.setVisibility(View.INVISIBLE);
         final int MIN_OPPONENTS = 1, MAX_OPPONENTS = 3;
         Bundle autoMatchCriteria = RoomConfig.createAutoMatchCriteria(MIN_OPPONENTS,
                 MAX_OPPONENTS, 0);
@@ -746,12 +760,8 @@ public class Game extends DaggerAppCompatActivity implements
                             if (name == null) {
                                 Log.d("ERR", "Can't get profile display name.");
                             } else {
-                                tronViewModel.getProfile(name).observeForever(new Observer<Profile>() {
-                                    @Override
-                                    public void onChanged(@Nullable Profile profile) {
-                                        mProfile = profile;
-                                    }
-                                });
+                                tronViewModel.getProfile(name).observeForever(profile -> mProfile = profile);
+                                tronViewModel.getLocationLiveData().observeForever(locationObserver);
                             }
 
 
@@ -781,6 +791,10 @@ public class Game extends DaggerAppCompatActivity implements
                     }
                 });
     }
+
+    /*
+     * GAME LOGIC SECTION. Methods that implement the game's rules.
+     */
 
     /**
      * Since a lot of the operations use tasks, we can use a common handler for whenever one fails.
@@ -836,10 +850,6 @@ public class Game extends DaggerAppCompatActivity implements
                 .setNeutralButton(android.R.string.ok, null)
                 .show();
     }
-
-    /*
-     * GAME LOGIC SECTION. Methods that implement the game's rules.
-     */
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
@@ -1000,6 +1010,11 @@ public class Game extends DaggerAppCompatActivity implements
         return super.onKeyDown(keyCode, e);
     }
 
+    /*
+     * COMMUNICATIONS SECTION. Methods that implement the game's network
+     * protocol.
+     */
+
     // Leave the room.
     void leaveRoom() {
         Log.d(TAG, "Leaving room.");
@@ -1019,11 +1034,6 @@ public class Game extends DaggerAppCompatActivity implements
             switchToMainScreen();
         }
     }
-
-    /*
-     * COMMUNICATIONS SECTION. Methods that implement the game's network
-     * protocol.
-     */
 
     // Show the waiting room UI to track the progress of other players as they enter the
     // room and get connected.
@@ -1120,6 +1130,11 @@ public class Game extends DaggerAppCompatActivity implements
         switchToMainScreen();
     }
 
+
+    /*
+     * UI SECTION. Methods that implement the game's UI.
+     */
+
     void updateRoom(Room room) {
         if (room != null) {
             mParticipants = room.getParticipants();
@@ -1128,11 +1143,6 @@ public class Game extends DaggerAppCompatActivity implements
 //            updatePeerScoresDisplay();
         }
     }
-
-
-    /*
-     * UI SECTION. Methods that implement the game's UI.
-     */
 
     // Reset game variables in preparation for a new game.
     void resetGameVars() {
@@ -1307,13 +1317,7 @@ public class Game extends DaggerAppCompatActivity implements
             return;
         }
         // Host color
-        float[] randomColor = new float[3];
         Random rand = new Random();
-        randomColor[0] = rand.nextFloat() * 360;
-        randomColor[1] = 1.0f;
-        randomColor[2] = 1.0f;
-        //int color = Color.HSVToColor(randomColor);
-
         String[] colors = {"#76FF03", "#FF3D00", "#18FFFF", "#FFFF00", "#E040FB", "#FF5252"};
         int colorIndex = rand.nextInt(colors.length);
         int color = Color.parseColor(colors[colorIndex]);
@@ -1335,11 +1339,6 @@ public class Game extends DaggerAppCompatActivity implements
                 mMsgBuf[4 * i + 4] = colorByteArray[3];
             } else {
                 // Different color for all players
-                float[] hsv = new float[3];
-                Color.colorToHSV(color, hsv);
-                hsv[0] = (hsv[0] + 0.25f) * 360 % 360;
-                //color = Color.HSVToColor(hsv);
-
                 while (color == playerColor) {
                     colorIndex = rand.nextInt(colors.length);
                     color = Color.parseColor(colors[colorIndex]);
@@ -1381,6 +1380,26 @@ public class Game extends DaggerAppCompatActivity implements
     }
 
     public void broadcastPlayerInfo() {
+        if (mProfile != null) {
+            broadCastPlayerProfile();
+        } else {
+            Bitmap defaultPicture = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
+            mProfile = new Profile(this.mSignedInAccount.getDisplayName(), this.currentLocation, PictureTypeConverter.toString(defaultPicture));
+            this.tronViewModel.saveProfile(this.mProfile);
+            broadCastPlayerProfile();
+        }
+    }
+
+//    public static  byte[] charToByteArray(char aChar){
+//        return ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putChar(aChar).array();
+//    }
+
+//    public static int byteArrayToChar(byte [] byteBarray){
+//        return ByteBuffer.wrap(byteBarray).order(ByteOrder.LITTLE_ENDIAN).getChar();
+//    }
+
+    private void broadCastPlayerProfile() {
+        tronViewModel.getLocationLiveData().removeObserver(locationObserver);
         SerializableProfile serializableProfile = new SerializableProfile(mProfile);
         byte[] bytes = SerializationUtils.serialize(serializableProfile);
         byte[] msg = new byte[bytes.length + 1];
@@ -1395,34 +1414,15 @@ public class Game extends DaggerAppCompatActivity implements
                 continue;
 
             mRealTimeMultiplayerClient.sendReliableMessage(msg,
-                    mRoomId, p.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
-                        @Override
-                        public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
-                            Log.d("COMM", "Profile info message sent");
-                            Log.d("COMM", "  recipientParticipantId: " + recipientParticipantId);
-                        }
+                    mRoomId, p.getParticipantId(), (statusCode, tokenId, recipientParticipantId) -> {
+                        Log.d("COMM", "Profile info message sent");
+                        Log.d("COMM", "  recipientParticipantId: " + recipientParticipantId);
                     })
-                    .addOnSuccessListener(new OnSuccessListener<Integer>() {
-                        @Override
-                        public void onSuccess(Integer tokenId) {
-                            Log.d("COMM", "Profile info message with tokenId: " + tokenId);
-                        }
-                    });
+                    .addOnSuccessListener(tokenId -> Log.d("COMM", "Profile info message with tokenId: " + tokenId));
         }
 
 
-
-
     }
-
-//    public static  byte[] charToByteArray(char aChar){
-//        return ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putChar(aChar).array();
-//    }
-
-//    public static int byteArrayToChar(byte [] byteBarray){
-//        return ByteBuffer.wrap(byteBarray).order(ByteOrder.LITTLE_ENDIAN).getChar();
-//    }
-
 
     public void broadcastCollision() {
         // Already registered collision(s)/Restarting
@@ -1648,26 +1648,18 @@ public class Game extends DaggerAppCompatActivity implements
         findViewById(R.id.invitation_popup).setVisibility(showInvPopup ? View.VISIBLE : View.GONE);
     }
 
-    void switchToMainScreen() {
-        if (mRealTimeMultiplayerClient != null) {
-            switchToScreen(R.id.screen_main);
-        } else {
-            switchToScreen(R.id.screen_sign_in);
-        }
-    }
-
     // updates the label that shows my score
 //    void updateScoreDisplay() {
 //        ((TextView) findViewById(R.id.my_score)).setText(formatScore(mScore));
 //    }
 
-    // formats a score as a three-digit number
-    String formatScore(int i) {
-        if (i < 0) {
-            i = 0;
+    void switchToMainScreen() {
+        if (mRealTimeMultiplayerClient != null) {
+            mSurfaceView.setVisibility(View.VISIBLE);
+            switchToScreen(R.id.screen_main);
+        } else {
+            switchToScreen(R.id.screen_sign_in);
         }
-        String s = String.valueOf(i);
-        return s.length() == 1 ? "00" + s : s.length() == 2 ? "0" + s : s;
     }
 
     // formats a time as a X.XX number
@@ -1710,6 +1702,14 @@ public class Game extends DaggerAppCompatActivity implements
      * MISC SECTION. Miscellaneous methods.
      */
 
+    // formats a score as a three-digit number
+    String formatScore(int i) {
+        if (i < 0) {
+            i = 0;
+        }
+        String s = String.valueOf(i);
+        return s.length() == 1 ? "00" + s : s.length() == 2 ? "0" + s : s;
+    }
 
     // Sets the flag to keep this screen on. It's recommended to do that during
     // the
@@ -1730,6 +1730,33 @@ public class Game extends DaggerAppCompatActivity implements
             resetGameVars();
             leaveRoom();
         }
+    }
+
+    @Override
+    public void surfaceCreated(SurfaceHolder holder) {
+        MediaPlayer media = MediaPlayer.create(this, R.raw.background_vid);
+        int videoWidth = media.getVideoWidth();
+        int videoHeight = media.getVideoHeight();
+        int screenHeight = mSurfaceView.getHeight();
+        ViewGroup.LayoutParams lp = mSurfaceView.getLayoutParams();
+        lp.height = (int) (screenHeight * 1.5);
+        lp.width = (int) (((float) videoWidth / (float) videoHeight) * (float) screenHeight * 1.5);
+
+        mSurfaceView.setLayoutParams(lp);
+        media.setDisplay(mSurfaceView.getHolder());
+
+        media.setLooping(true);
+        media.start();
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder) {
+
     }
 
     private class DelayedAck implements Runnable {
