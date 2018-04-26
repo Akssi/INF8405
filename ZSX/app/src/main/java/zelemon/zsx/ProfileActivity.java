@@ -20,18 +20,15 @@ import android.util.Log;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-
-import java.io.IOException;
-import java.io.InputStream;
-
-import javax.inject.Inject;
-
 import dagger.android.support.DaggerAppCompatActivity;
 import zelemon.zsx.persistence.database.PictureTypeConverter;
 import zelemon.zsx.persistence.database.Profile;
+
+import javax.inject.Inject;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class ProfileActivity extends DaggerAppCompatActivity {
 
@@ -55,7 +52,8 @@ public class ProfileActivity extends DaggerAppCompatActivity {
             loadImageFromDatabase();
         } else {
             if (this.currentLocation != null) {
-                this.currentProfile = new Profile(currentDisplayName, this.currentLocation, "");
+                Bitmap defaultPicture = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
+                this.currentProfile = new Profile(currentDisplayName, this.currentLocation, PictureTypeConverter.toString(defaultPicture));
                 this.tronViewModel.saveProfile(this.currentProfile);
             }
         }
