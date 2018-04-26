@@ -190,10 +190,10 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:layout_marginTop="8dp"
+            android:src="@drawable/ic_favorite_black_24dp"
             app:layout_constraintBottom_toTopOf="@+id/game_panel"
             app:layout_constraintStart_toEndOf="@+id/textView"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@android:drawable/btn_star_big_on" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
             android:id="@+id/life2"
@@ -202,10 +202,10 @@
             android:layout_marginBottom="8dp"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
+            android:src="@drawable/ic_favorite_black_24dp"
             app:layout_constraintBottom_toTopOf="@+id/game_panel"
             app:layout_constraintStart_toEndOf="@+id/life3"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@android:drawable/btn_star_big_on" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
             android:id="@+id/life1"
@@ -214,10 +214,10 @@
             android:layout_marginBottom="8dp"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
+            android:src="@drawable/ic_favorite_black_24dp"
             app:layout_constraintBottom_toTopOf="@+id/game_panel"
             app:layout_constraintStart_toEndOf="@+id/life2"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@android:drawable/btn_star_big_on" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
             android:id="@+id/enemy_life1"
@@ -226,10 +226,10 @@
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginTop="8dp"
+            android:src="@drawable/ic_favorite_black_24dp"
             app:layout_constraintBottom_toTopOf="@+id/game_panel"
             app:layout_constraintEnd_toStartOf="@+id/enemy_life2"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@android:drawable/btn_star_big_on" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
             android:id="@+id/enemy_life2"
@@ -238,10 +238,10 @@
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginTop="8dp"
+            android:src="@drawable/ic_favorite_black_24dp"
             app:layout_constraintBottom_toTopOf="@+id/game_panel"
             app:layout_constraintEnd_toStartOf="@+id/enemy_life3"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@android:drawable/btn_star_big_on" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
             android:id="@+id/enemy_life3"
@@ -250,10 +250,10 @@
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginTop="8dp"
+            android:src="@drawable/ic_favorite_black_24dp"
             app:layout_constraintBottom_toTopOf="@+id/game_panel"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@android:drawable/btn_star_big_on" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/textView"
