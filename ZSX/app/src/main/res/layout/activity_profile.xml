@@ -31,8 +31,8 @@
 
         <ImageView
             android:id="@+id/profile_photo"
-            android:layout_width="150dp"
-            android:layout_height="150dp"
+            android:layout_width="250dp"
+            android:layout_height="250dp"
             android:layout_marginTop="8dp"
             android:src="@mipmap/ic_launcher" />
 
